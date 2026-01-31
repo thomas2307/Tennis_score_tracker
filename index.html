@@ -4,32 +4,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
     
-    <title>Tennis Score Tracker | Kostenloser Online Punktezähler</title>
-    <meta name="description" content="Der einfache Tennis Score Tracker für dein Smartphone. Zähle Punkte, Spiele und Sätze live auf dem Platz. Mit Match-Tie-Break (10 Punkte) und No-Ad Regel." />
-    <meta name="keywords" content="Tennis, Scoreboard, Punktezähler, App, Zähltafel, Online, Kostenlos, Match Tie Break, Tennis Score Keeper" />
-    <meta name="author" content="Thomas" />
-    <meta name="robots" content="index, follow" />
+    <title>Tennis Score Tracker | Online Zähler</title>
+    <meta name="description" content="Kostenloser Tennis Punktezähler für Smartphone & Tablet. Mit Match-Tie-Break (10), No-Ad und 5 Sprachen." />
     
-    <meta property="og:title" content="Tennis Score Tracker" />
-    <meta property="og:description" content="Live Tennis Punktezähler für den Platz. Kostenlos und ohne Installation." />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://thomas2307.github.io/Tennis_score_tracker/" />
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Tennis Score Tracker",
-      "url": "https://thomas2307.github.io/Tennis_score_tracker/",
-      "description": "Ein digitaler Tennis Punktezähler für Amateure und Profis.",
-      "applicationCategory": "SportsApplication",
-      "operatingSystem": "Any",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "EUR"
-      }
-    }
-    </script>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2560/2560381.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -39,13 +20,11 @@
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Teko:wght@300;500;700&display=swap');
-        body { background-color: #000; overscroll-behavior-y: contain; user-select: none; font-family: 'Teko', sans-serif; }
+        body { background-color: #000; overscroll-behavior-y: contain; user-select: none; font-family: 'Teko', sans-serif; -webkit-tap-highlight-color: transparent; }
         .big-num { font-size: clamp(3rem, 12vw, 5rem); line-height: 1; font-weight: 500; }
         .mega-num { font-size: clamp(5rem, 20vw, 8rem); line-height: 0.9; font-weight: 700; }
         .label-text { font-size: 0.8rem; letter-spacing: 0.1em; opacity: 0.6; text-transform: uppercase; font-family: sans-serif; font-weight: bold;}
-        
-        /* Platzhalter für Werbung */
-        .ad-container { width: 100%; height: 60px; background: #1e293b; display: flex; items-center; justify-content: center; color: #475569; font-size: 0.75rem; font-family: sans-serif; text-transform: uppercase; letter-spacing: 1px; }
+        .ad-container { width: 100%; height: 60px; background: #111; display: flex; items-center; justify-content: center; color: #444; font-size: 0.7rem; text-transform: uppercase; border-top: 1px solid #222; }
     </style>
     
     </head>
@@ -58,7 +37,9 @@
         const TRANSLATIONS = {
             de: { settings: "Einstellungen", matchType: "Match-Typ", gamesSet: "Spiele/Satz", noAd: "No-Ad", lang: "Sprache", reset: "Neustart", undo: "Zurück", p1Def: "Spieler 1", p2Def: "Spieler 2", adv: "AD", tiebreak: "TIE-BREAK", matchTb: "MATCH TIE-BREAK (10)", whoServes: "Aufschlag Start", lastSet: "Letzter Satz", tb: "Tie-Break", advSet: "Ausspielen" },
             en: { settings: "Settings", matchType: "Match Type", gamesSet: "Games/Set", noAd: "No-Ad", lang: "Language", reset: "Reset", undo: "Undo", p1Def: "Player 1", p2Def: "Player 2", adv: "AD", tiebreak: "TIE-BREAK", matchTb: "MATCH TIE-BREAK (10)", whoServes: "First Server", lastSet: "Final Set", tb: "Tie-Break", advSet: "Advantage" },
-            fr: { settings: "Réglages", matchType: "Type", gamesSet: "Jeux/Set", noAd: "No-Ad", lang: "Langue", reset: "Reset", undo: "Annuler", p1Def: "Joueur 1", p2Def: "Joueur 2", adv: "AV", tiebreak: "TIE-BREAK", matchTb: "SUPER TIE-BREAK (10)", whoServes: "Service", lastSet: "Dernier Set", tb: "Tie-Break", advSet: "Avantage" }
+            fr: { settings: "Réglages", matchType: "Type", gamesSet: "Jeux/Set", noAd: "No-Ad", lang: "Langue", reset: "Reset", undo: "Annuler", p1Def: "Joueur 1", p2Def: "Joueur 2", adv: "AV", tiebreak: "TIE-BREAK", matchTb: "SUPER TIE-BREAK (10)", whoServes: "Service", lastSet: "Dernier Set", tb: "Tie-Break", advSet: "Avantage" },
+            it: { settings: "Impostazioni", matchType: "Tipo di Match", gamesSet: "Giochi/Set", noAd: "No-Ad", lang: "Lingua", reset: "Reset", undo: "Indietro", p1Def: "Giocatore 1", p2Def: "Giocatore 2", adv: "VANT", tiebreak: "TIE-BREAK", matchTb: "MATCH TIE-BREAK (10)", whoServes: "Servizio", lastSet: "Ultimo Set", tb: "Tie-Break", advSet: "Vantaggio" },
+            es: { settings: "Ajustes", matchType: "Tipo de Partido", gamesSet: "Juegos/Set", noAd: "No-Ad", lang: "Idioma", reset: "Reiniciar", undo: "Deshacer", p1Def: "Jugador 1", p2Def: "Jugador 2", adv: "VENT", tiebreak: "TIE-BREAK", matchTb: "MATCH TIE-BREAK (10)", whoServes: "Servicio", lastSet: "Set Decisivo", tb: "Tie-Break", advSet: "Ventaja" }
         };
 
         function App() {
@@ -105,7 +86,7 @@
 
                 let gameWon = false;
                 if (n.isTB) {
-                    // LOGIK UPDATE: Match Tie Break bis 10, sonst 7
+                    // Match Tie Break bis 10 im Entscheidungssatz, sonst 7
                     const isDecider = (n.p1.sts + n.p2.sts) === (settings.setsToWin * 2 - 2);
                     const targetPoints = (isDecider && settings.lastSetTieBreak) ? 10 : 7;
                     
@@ -186,7 +167,7 @@
                                 <div className="flex flex-col items-center flex-1 justify-center"><span className="label-text text-white">POINTS</span><span className="mega-num text-white tracking-tighter">{getPointStr(state.p1.pts, state.p2.pts)}</span></div>
                             </div>
                             <button onClick={() => handlePoint('p1')} className="h-32 bg-blue-700 active:bg-blue-600 w-full flex flex-col items-center justify-center border-t border-blue-500 shadow-[inset_0_0_30px_rgba(0,0,0,0.3)] transition-all z-10">
-                                <span className="text-2xl font-bold uppercase tracking-wider">{settings.p1Name || "P1"}</span>
+                                <span className="text-2xl font-bold uppercase tracking-wider truncate px-2 w-full text-center">{settings.p1Name || "P1"}</span>
                                 <span className="text-xs opacity-75 font-bold">+ POINT</span>
                             </button>
                         </div>
@@ -200,7 +181,7 @@
                                 <div className="flex flex-col items-center flex-1 justify-center"><span className="label-text text-white">POINTS</span><span className="mega-num text-white tracking-tighter">{getPointStr(state.p2.pts, state.p1.pts)}</span></div>
                             </div>
                              <button onClick={() => handlePoint('p2')} className="h-32 bg-emerald-700 active:bg-emerald-600 w-full flex flex-col items-center justify-center border-t border-emerald-500 shadow-[inset_0_0_30px_rgba(0,0,0,0.3)] transition-all z-10">
-                                <span className="text-2xl font-bold uppercase tracking-wider">{settings.p2Name || "P2"}</span>
+                                <span className="text-2xl font-bold uppercase tracking-wider truncate px-2 w-full text-center">{settings.p2Name || "P2"}</span>
                                 <span className="text-xs opacity-75 font-bold">+ POINT</span>
                             </button>
                         </div>
@@ -220,9 +201,9 @@
                         )}
                     </div>
                     
-                    {/* AD PLACEHOLDER (Werbung) */}
+                    {/* AD PLACEHOLDER */}
                     <div className="ad-container">
-                        <span className="opacity-30">Anzeige</span>
+                        <span className="opacity-30">Advertising</span>
                     </div>
 
                     {/* Settings Modal */}
@@ -235,8 +216,8 @@
                                 </div>
                                 <div className="space-y-6 max-w-md mx-auto">
                                     <div className="grid grid-cols-2 gap-4">
-                                        <input value={settings.p1Name} onChange={e => setSettings({...settings, p1Name: e.target.value})} className="w-full bg-slate-800 p-4 rounded-xl border border-blue-900 text-white font-bold" placeholder="Spieler 1" />
-                                        <input value={settings.p2Name} onChange={e => setSettings({...settings, p2Name: e.target.value})} className="w-full bg-slate-800 p-4 rounded-xl border border-emerald-900 text-white font-bold" placeholder="Spieler 2" />
+                                        <input value={settings.p1Name} onChange={e => setSettings({...settings, p1Name: e.target.value})} className="w-full bg-slate-800 p-4 rounded-xl border border-blue-900 text-white font-bold" placeholder="Player 1" />
+                                        <input value={settings.p2Name} onChange={e => setSettings({...settings, p2Name: e.target.value})} className="w-full bg-slate-800 p-4 rounded-xl border border-emerald-900 text-white font-bold" placeholder="Player 2" />
                                     </div>
                                     <div>
                                         <label className="text-slate-500 text-xs font-bold uppercase block mb-2">{t.whoServes}</label>
@@ -268,7 +249,17 @@
                                             <button onClick={() => setSettings({...settings, lastSetTieBreak: !settings.lastSetTieBreak})} className="text-sm font-bold bg-slate-900 px-3 py-1 rounded text-blue-400">{settings.lastSetTieBreak ? t.tb : t.advSet}</button>
                                         </div>
                                     </div>
-                                    <button onClick={() => setShowSettings(false)} className="w-full py-4 bg-blue-600 rounded-xl font-black uppercase text-xl">OK</button>
+                                    
+                                    {/* Language Selector */}
+                                    <select value={lang} onChange={e => setLang(e.target.value)} className="w-full bg-slate-800 p-4 rounded-xl border border-slate-700 text-white font-bold uppercase text-xs tracking-widest outline-none focus:border-blue-500">
+                                        <option value="de">Deutsch</option>
+                                        <option value="en">English</option>
+                                        <option value="fr">Français</option>
+                                        <option value="it">Italiano</option>
+                                        <option value="es">Español</option>
+                                    </select>
+
+                                    <button onClick={() => setShowSettings(false)} className="w-full py-4 bg-blue-600 rounded-xl font-black uppercase text-xl mt-4">OK</button>
                                     <button onClick={reset} className="w-full py-4 text-red-500 font-bold uppercase">{t.reset}</button>
                                 </div>
                             </div>
