@@ -4,9 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
     
-    <title>Tennis Score Tracker | Online Zähler</title>
-    <meta name="description" content="Kostenloser Tennis Punktezähler für Smartphone & Tablet. Mit Match-Tie-Break (10), No-Ad und 5 Sprachen." />
-    
+    <title>Tennis Score Tracker</title>
+    <meta name="description" content="Kostenloser Tennis Punktezähler. Große Tasten, Match-Tie-Break (10), No-Ad und 5 Sprachen." />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#000000">
@@ -16,15 +15,31 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Teko:wght@300;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Teko:wght@400;600;700&display=swap');
         body { background-color: #000; overscroll-behavior-y: contain; user-select: none; font-family: 'Teko', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .big-num { font-size: clamp(3rem, 12vw, 5rem); line-height: 1; font-weight: 500; }
-        .mega-num { font-size: clamp(5rem, 20vw, 8rem); line-height: 0.9; font-weight: 700; }
-        .label-text { font-size: 0.8rem; letter-spacing: 0.1em; opacity: 0.6; text-transform: uppercase; font-family: sans-serif; font-weight: bold;}
-        .ad-container { width: 100%; height: 60px; background: #111; display: flex; items-center; justify-content: center; color: #444; font-size: 0.7rem; text-transform: uppercase; border-top: 1px solid #222; }
+        
+        /* Schriftgrößen-Logik */
+        .big-num { font-size: clamp(3.5rem, 12vw, 6rem); line-height: 0.9; font-weight: 600; }
+        .mega-num { font-size: clamp(6rem, 22vw, 10rem); line-height: 0.8; font-weight: 700; text-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .label-text { font-size: 1.5rem; letter-spacing: 0.05em; text-transform: uppercase; font-family: 'Teko', sans-serif; font-weight: 700; margin-bottom: -5px; }
+        
+        /* 3D Button Style */
+        .arcade-btn {
+            position: relative;
+            transition: all 0.1s;
+            border-bottom: 8px solid rgba(0,0,0,0.3);
+            top: 0px;
+        }
+        .arcade-btn:active {
+            border-bottom: 0px solid rgba(0,0,0,0.3);
+            top: 8px;
+            transform: scale(0.98);
+        }
+        
+        .ad-container { width: 100%; height: 60px; background: #111; display: flex; items-center; justify-content: center; color: #444; font-size: 0.7rem; text-transform: uppercase; border-top: 1px solid #222; font-family: sans-serif; }
     </style>
     
     </head>
@@ -35,11 +50,11 @@
         const { useState, useEffect } = React;
 
         const TRANSLATIONS = {
-            de: { settings: "Einstellungen", matchType: "Match-Typ", gamesSet: "Spiele/Satz", noAd: "No-Ad", lang: "Sprache", reset: "Neustart", undo: "Zurück", p1Def: "Spieler 1", p2Def: "Spieler 2", adv: "AD", tiebreak: "TIE-BREAK", matchTb: "MATCH TIE-BREAK (10)", whoServes: "Aufschlag Start", lastSet: "Letzter Satz", tb: "Tie-Break", advSet: "Ausspielen" },
-            en: { settings: "Settings", matchType: "Match Type", gamesSet: "Games/Set", noAd: "No-Ad", lang: "Language", reset: "Reset", undo: "Undo", p1Def: "Player 1", p2Def: "Player 2", adv: "AD", tiebreak: "TIE-BREAK", matchTb: "MATCH TIE-BREAK (10)", whoServes: "First Server", lastSet: "Final Set", tb: "Tie-Break", advSet: "Advantage" },
-            fr: { settings: "Réglages", matchType: "Type", gamesSet: "Jeux/Set", noAd: "No-Ad", lang: "Langue", reset: "Reset", undo: "Annuler", p1Def: "Joueur 1", p2Def: "Joueur 2", adv: "AV", tiebreak: "TIE-BREAK", matchTb: "SUPER TIE-BREAK (10)", whoServes: "Service", lastSet: "Dernier Set", tb: "Tie-Break", advSet: "Avantage" },
-            it: { settings: "Impostazioni", matchType: "Tipo di Match", gamesSet: "Giochi/Set", noAd: "No-Ad", lang: "Lingua", reset: "Reset", undo: "Indietro", p1Def: "Giocatore 1", p2Def: "Giocatore 2", adv: "VANT", tiebreak: "TIE-BREAK", matchTb: "MATCH TIE-BREAK (10)", whoServes: "Servizio", lastSet: "Ultimo Set", tb: "Tie-Break", advSet: "Vantaggio" },
-            es: { settings: "Ajustes", matchType: "Tipo de Partido", gamesSet: "Juegos/Set", noAd: "No-Ad", lang: "Idioma", reset: "Reiniciar", undo: "Deshacer", p1Def: "Jugador 1", p2Def: "Jugador 2", adv: "VENT", tiebreak: "TIE-BREAK", matchTb: "MATCH TIE-BREAK (10)", whoServes: "Servicio", lastSet: "Set Decisivo", tb: "Tie-Break", advSet: "Ventaja" }
+            de: { settings: "EINSTELLUNGEN", matchType: "Match-Typ", gamesSet: "Spiele/Satz", noAd: "No-Ad", lang: "Sprache", reset: "Neustart", undo: "Zurück", p1Def: "Spieler 1", p2Def: "Spieler 2", adv: "AD", tiebreak: "TIE-BREAK", matchTb: "MATCH TIE-BREAK (10)", whoServes: "Aufschlag Start", lastSet: "Letzter Satz", tb: "Tie-Break", advSet: "Ausspielen", tap: "PUNKT" },
+            en: { settings: "SETTINGS", matchType: "Match Type", gamesSet: "Games/Set", noAd: "No-Ad", lang: "Language", reset: "Reset", undo: "Undo", p1Def: "Player 1", p2Def: "Player 2", adv: "AD", tiebreak: "TIE-BREAK", matchTb: "MATCH TIE-BREAK (10)", whoServes: "First Server", lastSet: "Final Set", tb: "Tie-Break", advSet: "Advantage", tap: "POINT" },
+            fr: { settings: "RÉGLAGES", matchType: "Type", gamesSet: "Jeux/Set", noAd: "No-Ad", lang: "Langue", reset: "Reset", undo: "Annuler", p1Def: "Joueur 1", p2Def: "Joueur 2", adv: "AV", tiebreak: "TIE-BREAK", matchTb: "SUPER TIE-BREAK (10)", whoServes: "Service", lastSet: "Dernier Set", tb: "Tie-Break", advSet: "Avantage", tap: "POINT" },
+            it: { settings: "IMPOSTAZIONI", matchType: "Tipo", gamesSet: "Giochi/Set", noAd: "No-Ad", lang: "Lingua", reset: "Reset", undo: "Indietro", p1Def: "Giocatore 1", p2Def: "Giocatore 2", adv: "VANT", tiebreak: "TIE-BREAK", matchTb: "MATCH TIE-BREAK (10)", whoServes: "Servizio", lastSet: "Ultimo Set", tb: "Tie-Break", advSet: "Vantaggio", tap: "PUNTO" },
+            es: { settings: "AJUSTES", matchType: "Tipo", gamesSet: "Juegos/Set", noAd: "No-Ad", lang: "Idioma", reset: "Reiniciar", undo: "Deshacer", p1Def: "Jugador 1", p2Def: "Jugador 2", adv: "VENT", tiebreak: "TIE-BREAK", matchTb: "MATCH TIE-BREAK (10)", whoServes: "Servicio", lastSet: "Set Decisivo", tb: "Tie-Break", advSet: "Ventaja", tap: "PUNTO" }
         };
 
         function App() {
@@ -86,14 +101,10 @@
 
                 let gameWon = false;
                 if (n.isTB) {
-                    // Match Tie Break bis 10 im Entscheidungssatz, sonst 7
                     const isDecider = (n.p1.sts + n.p2.sts) === (settings.setsToWin * 2 - 2);
                     const targetPoints = (isDecider && settings.lastSetTieBreak) ? 10 : 7;
-                    
                     if (p.pts >= targetPoints && (p.pts - o.pts) >= 2) gameWon = true;
-                    
-                    const total = p.pts + o.pts;
-                    if (total % 2 === 1) n.server = n.server === 'p1' ? 'p2' : 'p1';
+                    if ((p.pts + o.pts) % 2 === 1) n.server = n.server === 'p1' ? 'p2' : 'p1';
                 } else {
                     if (settings.noAd) { if (p.pts >= 4) gameWon = true; }
                     else { if (p.pts >= 4 && (p.pts - o.pts) >= 2) gameWon = true; }
@@ -101,9 +112,7 @@
 
                 if (gameWon) {
                     p.pts = 0; o.pts = 0; p.gms++;
-                    if (!n.isTB) n.server = n.server === 'p1' ? 'p2' : 'p1';
-                    else n.server = n.server === 'p1' ? 'p2' : 'p1'; 
-                    
+                    n.server = n.server === 'p1' ? 'p2' : 'p1';
                     n.isTB = false;
                     const limit = settings.gamesPerSet;
                     
@@ -138,18 +147,18 @@
                 <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden">
                     
                     {/* Header */}
-                    <div className="h-12 flex justify-between items-center px-4 bg-slate-900 border-b border-slate-800 shrink-0 z-20">
-                        <button onClick={undo} className="text-slate-400 font-bold uppercase text-sm tracking-wider flex items-center gap-2 active:scale-95">
+                    <div className="h-14 flex justify-between items-center px-4 bg-slate-900 border-b border-slate-800 shrink-0 z-20">
+                        <button onClick={undo} className="text-slate-400 font-bold uppercase text-lg tracking-wider flex items-center gap-2 active:scale-95 bg-slate-800 px-3 py-1 rounded-lg border border-slate-700">
                             <i className="fa-solid fa-rotate-left"></i> {t.undo}
                         </button>
                         <div className="flex gap-2">
                              {state.fSets.map((s, i) => (
-                                <span key={i} className="text-slate-500 font-mono text-sm bg-slate-800 px-1 rounded">
+                                <span key={i} className="text-slate-300 font-mono text-lg font-bold bg-slate-800 px-2 py-1 rounded border border-slate-700">
                                     {s.p1}-{s.p2}
                                 </span>
                             ))}
                         </div>
-                        <button onClick={() => setShowSettings(true)} className="text-slate-400 text-lg active:scale-95">
+                        <button onClick={() => setShowSettings(true)} className="text-slate-300 text-2xl active:scale-95 bg-slate-800 p-2 rounded-lg border border-slate-700">
                             <i className="fa-solid fa-gear"></i>
                         </button>
                     </div>
@@ -158,52 +167,86 @@
                     <div className="flex-1 flex w-full relative">
                         <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-slate-800 z-10 transform -translate-x-1/2"></div>
 
-                        {/* P1 */}
+                        {/* P1 Section */}
                         <div className="flex-1 flex flex-col bg-slate-900 relative">
-                            <div className={`absolute top-2 left-2 right-2 h-1 ${state.server === 'p1' && !state.over ? 'bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.8)]' : 'bg-transparent'} rounded-full transition-all`}></div>
-                            <div className="flex-1 flex flex-col justify-start pt-6 items-center border-r border-slate-800/50">
-                                <div className="flex flex-col items-center mb-2"><span className="label-text text-blue-500">SETS</span><span className="big-num text-blue-500">{state.p1.sts}</span></div>
-                                <div className="flex flex-col items-center mb-2"><span className="label-text text-blue-400">GAMES</span><span className="big-num text-blue-400">{state.p1.gms}</span></div>
-                                <div className="flex flex-col items-center flex-1 justify-center"><span className="label-text text-white">POINTS</span><span className="mega-num text-white tracking-tighter">{getPointStr(state.p1.pts, state.p2.pts)}</span></div>
+                            {state.server === 'p1' && !state.over && <div className="absolute top-0 left-0 right-0 h-2 bg-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.6)] z-20"></div>}
+                            
+                            <div className="flex-1 flex flex-col justify-start pt-4 items-center border-r border-slate-800/50">
+                                <div className="flex flex-col items-center mb-1">
+                                    <span className="label-text text-blue-500">SETS</span>
+                                    <span className="big-num text-blue-500">{state.p1.sts}</span>
+                                </div>
+                                <div className="flex flex-col items-center mb-1">
+                                    <span className="label-text text-blue-400">GAMES</span>
+                                    <span className="big-num text-blue-400">{state.p1.gms}</span>
+                                </div>
+                                <div className="flex flex-col items-center flex-1 justify-center min-h-0">
+                                    <span className="label-text text-white/80">POINTS</span>
+                                    <span className="mega-num text-white tracking-tighter">{getPointStr(state.p1.pts, state.p2.pts)}</span>
+                                </div>
                             </div>
-                            <button onClick={() => handlePoint('p1')} className="h-32 bg-blue-700 active:bg-blue-600 w-full flex flex-col items-center justify-center border-t border-blue-500 shadow-[inset_0_0_30px_rgba(0,0,0,0.3)] transition-all z-10">
-                                <span className="text-2xl font-bold uppercase tracking-wider truncate px-2 w-full text-center">{settings.p1Name || "P1"}</span>
-                                <span className="text-xs opacity-75 font-bold">+ POINT</span>
-                            </button>
+                            
+                            <div className="p-3 pb-6 bg-slate-900 z-30">
+                                <button onClick={() => handlePoint('p1')} className="arcade-btn w-full h-32 bg-blue-600 rounded-2xl flex flex-col items-center justify-center border-2 border-blue-400 shadow-lg">
+                                    <span className="text-3xl font-bold uppercase tracking-wider text-white drop-shadow-md truncate w-full px-2 text-center">{settings.p1Name || t.p1Def}</span>
+                                    <div className="flex items-center gap-2 mt-1 opacity-80">
+                                        <i className="fa-solid fa-hand-pointer text-blue-200"></i>
+                                        <span className="text-xl font-bold text-blue-100">{t.tap} +1</span>
+                                    </div>
+                                </button>
+                            </div>
                         </div>
 
-                        {/* P2 */}
+                        {/* P2 Section */}
                         <div className="flex-1 flex flex-col bg-slate-950 relative">
-                             <div className={`absolute top-2 left-2 right-2 h-1 ${state.server === 'p2' && !state.over ? 'bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.8)]' : 'bg-transparent'} rounded-full transition-all`}></div>
-                            <div className="flex-1 flex flex-col justify-start pt-6 items-center">
-                                <div className="flex flex-col items-center mb-2"><span className="label-text text-emerald-600">SETS</span><span className="big-num text-emerald-600">{state.p2.sts}</span></div>
-                                <div className="flex flex-col items-center mb-2"><span className="label-text text-emerald-500">GAMES</span><span className="big-num text-emerald-500">{state.p2.gms}</span></div>
-                                <div className="flex flex-col items-center flex-1 justify-center"><span className="label-text text-white">POINTS</span><span className="mega-num text-white tracking-tighter">{getPointStr(state.p2.pts, state.p1.pts)}</span></div>
+                             {state.server === 'p2' && !state.over && <div className="absolute top-0 left-0 right-0 h-2 bg-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.6)] z-20"></div>}
+                            
+                            <div className="flex-1 flex flex-col justify-start pt-4 items-center">
+                                <div className="flex flex-col items-center mb-1">
+                                    <span className="label-text text-emerald-600">SETS</span>
+                                    <span className="big-num text-emerald-600">{state.p2.sts}</span>
+                                </div>
+                                <div className="flex flex-col items-center mb-1">
+                                    <span className="label-text text-emerald-500">GAMES</span>
+                                    <span className="big-num text-emerald-500">{state.p2.gms}</span>
+                                </div>
+                                <div className="flex flex-col items-center flex-1 justify-center min-h-0">
+                                    <span className="label-text text-white/80">POINTS</span>
+                                    <span className="mega-num text-white tracking-tighter">{getPointStr(state.p2.pts, state.p1.pts)}</span>
+                                </div>
                             </div>
-                             <button onClick={() => handlePoint('p2')} className="h-32 bg-emerald-700 active:bg-emerald-600 w-full flex flex-col items-center justify-center border-t border-emerald-500 shadow-[inset_0_0_30px_rgba(0,0,0,0.3)] transition-all z-10">
-                                <span className="text-2xl font-bold uppercase tracking-wider truncate px-2 w-full text-center">{settings.p2Name || "P2"}</span>
-                                <span className="text-xs opacity-75 font-bold">+ POINT</span>
-                            </button>
+                            
+                            <div className="p-3 pb-6 bg-slate-950 z-30">
+                                <button onClick={() => handlePoint('p2')} className="arcade-btn w-full h-32 bg-emerald-600 rounded-2xl flex flex-col items-center justify-center border-2 border-emerald-400 shadow-lg">
+                                    <span className="text-3xl font-bold uppercase tracking-wider text-white drop-shadow-md truncate w-full px-2 text-center">{settings.p2Name || t.p2Def}</span>
+                                     <div className="flex items-center gap-2 mt-1 opacity-80">
+                                        <i className="fa-solid fa-hand-pointer text-emerald-100"></i>
+                                        <span className="text-xl font-bold text-emerald-100">{t.tap} +1</span>
+                                    </div>
+                                </button>
+                            </div>
                         </div>
 
                         {/* Overlays */}
                         {state.isTB && (
-                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-500 text-black px-6 py-2 rounded-full font-black text-xl shadow-xl z-30 animate-pulse whitespace-nowrap border-4 border-black">
+                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-500 text-black px-8 py-3 rounded-xl font-black text-2xl shadow-[0_0_20px_rgba(234,179,8,0.5)] z-40 animate-pulse whitespace-nowrap border-4 border-black">
                                 {(state.p1.sts + state.p2.sts) === (settings.setsToWin * 2 - 2) && settings.lastSetTieBreak ? t.matchTb : t.tiebreak}
                             </div>
                         )}
                         {state.over && (
-                             <div className="absolute inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-6 text-center backdrop-blur-md">
-                                <h1 className="text-5xl font-black text-white mb-4 uppercase">Match Over</h1>
-                                <div className="text-3xl font-bold mb-10 text-slate-300 font-mono">{state.p1.sts > state.p2.sts ? (settings.p1Name || "P1") : (settings.p2Name || "P2")} Wins!</div>
-                                <button onClick={reset} className="bg-white text-black px-10 py-4 rounded-full font-bold uppercase text-xl shadow-lg hover:scale-105 transition-transform">{t.reset}</button>
+                             <div className="absolute inset-0 bg-black/95 z-50 flex flex-col items-center justify-center p-6 text-center backdrop-blur-md">
+                                <h1 className="text-6xl font-bold text-white mb-6 uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">MATCH OVER</h1>
+                                <div className="text-4xl font-bold mb-12 text-slate-200">
+                                    {state.p1.sts > state.p2.sts ? (settings.p1Name || t.p1Def) : (settings.p2Name || t.p2Def)} <span className="text-yellow-400">WINS!</span>
+                                </div>
+                                <button onClick={reset} className="bg-white text-black px-12 py-5 rounded-full font-bold uppercase text-2xl shadow-xl hover:scale-105 transition-transform active:bg-slate-200">{t.reset}</button>
                             </div>
                         )}
                     </div>
                     
                     {/* AD PLACEHOLDER */}
                     <div className="ad-container">
-                        <span className="opacity-30">Advertising</span>
+                        <span className="opacity-30">Advertising / Werbung</span>
                     </div>
 
                     {/* Settings Modal */}
@@ -211,47 +254,46 @@
                         <div className="fixed inset-0 bg-slate-900/95 z-50 overflow-y-auto font-sans">
                             <div className="p-6">
                                 <div className="flex justify-between items-center mb-8">
-                                    <h2 className="text-2xl font-bold text-white">{t.settings}</h2>
-                                    <button onClick={() => setShowSettings(false)} className="text-slate-400 text-3xl">&times;</button>
+                                    <h2 className="text-3xl font-bold text-white font-sans">{t.settings}</h2>
+                                    <button onClick={() => setShowSettings(false)} className="text-slate-400 text-4xl bg-slate-800 w-12 h-12 rounded-full">&times;</button>
                                 </div>
                                 <div className="space-y-6 max-w-md mx-auto">
                                     <div className="grid grid-cols-2 gap-4">
-                                        <input value={settings.p1Name} onChange={e => setSettings({...settings, p1Name: e.target.value})} className="w-full bg-slate-800 p-4 rounded-xl border border-blue-900 text-white font-bold" placeholder="Player 1" />
-                                        <input value={settings.p2Name} onChange={e => setSettings({...settings, p2Name: e.target.value})} className="w-full bg-slate-800 p-4 rounded-xl border border-emerald-900 text-white font-bold" placeholder="Player 2" />
+                                        <input value={settings.p1Name} onChange={e => setSettings({...settings, p1Name: e.target.value})} className="w-full bg-slate-800 p-4 rounded-xl border-2 border-blue-900 text-white font-bold text-lg focus:border-blue-500 outline-none placeholder-slate-600" placeholder={t.p1Def} />
+                                        <input value={settings.p2Name} onChange={e => setSettings({...settings, p2Name: e.target.value})} className="w-full bg-slate-800 p-4 rounded-xl border-2 border-emerald-900 text-white font-bold text-lg focus:border-emerald-500 outline-none placeholder-slate-600" placeholder={t.p2Def} />
                                     </div>
                                     <div>
-                                        <label className="text-slate-500 text-xs font-bold uppercase block mb-2">{t.whoServes}</label>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <button onClick={() => { setSettings({...settings, initialServer: 'p1'}); setState(s => ({...s, server: 'p1'})) }} className={`p-3 rounded-xl font-bold ${settings.initialServer === 'p1' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{settings.p1Name || "P1"}</button>
-                                            <button onClick={() => { setSettings({...settings, initialServer: 'p2'}); setState(s => ({...s, server: 'p2'})) }} className={`p-3 rounded-xl font-bold ${settings.initialServer === 'p2' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{settings.p2Name || "P2"}</button>
+                                        <label className="text-slate-400 text-sm font-bold uppercase block mb-3">{t.whoServes}</label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button onClick={() => { setSettings({...settings, initialServer: 'p1'}); setState(s => ({...s, server: 'p1'})) }} className={`p-4 rounded-xl font-bold text-lg border-2 ${settings.initialServer === 'p1' ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>{settings.p1Name || "P1"}</button>
+                                            <button onClick={() => { setSettings({...settings, initialServer: 'p2'}); setState(s => ({...s, server: 'p2'})) }} className={`p-4 rounded-xl font-bold text-lg border-2 ${settings.initialServer === 'p2' ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>{settings.p2Name || "P2"}</button>
                                         </div>
                                     </div>
                                     <hr className="border-slate-800"/>
-                                    <div className="bg-slate-800 p-4 rounded-xl space-y-4">
+                                    <div className="bg-slate-800 p-5 rounded-2xl space-y-6 border border-slate-700">
                                         <div className="flex justify-between items-center">
-                                            <span>{t.gamesSet}</span>
+                                            <span className="font-bold text-slate-300">{t.gamesSet}</span>
                                             <div className="flex bg-slate-900 rounded-lg p-1">
-                                                {[4,6].map(g => <button key={g} onClick={() => setSettings({...settings, gamesPerSet: g})} className={`px-4 py-1 rounded ${settings.gamesPerSet === g ? 'bg-slate-600 text-white' : 'text-slate-500'}`}>{g}</button>)}
+                                                {[4,6].map(g => <button key={g} onClick={() => setSettings({...settings, gamesPerSet: g})} className={`px-5 py-2 rounded font-bold ${settings.gamesPerSet === g ? 'bg-slate-600 text-white shadow' : 'text-slate-500'}`}>{g}</button>)}
                                             </div>
                                         </div>
                                         <div className="flex justify-between items-center">
-                                            <span>{t.matchType}</span>
+                                            <span className="font-bold text-slate-300">{t.matchType}</span>
                                             <div className="flex bg-slate-900 rounded-lg p-1">
-                                                {[2,3].map(s => <button key={s} onClick={() => setSettings({...settings, setsToWin: s})} className={`px-4 py-1 rounded ${settings.setsToWin === s ? 'bg-slate-600 text-white' : 'text-slate-500'}`}>{s === 2 ? 'Bo3' : 'Bo5'}</button>)}
+                                                {[2,3].map(s => <button key={s} onClick={() => setSettings({...settings, setsToWin: s})} className={`px-5 py-2 rounded font-bold ${settings.setsToWin === s ? 'bg-slate-600 text-white shadow' : 'text-slate-500'}`}>{s === 2 ? 'Bo3' : 'Bo5'}</button>)}
                                             </div>
                                         </div>
                                         <div className="flex justify-between items-center">
-                                            <span>No-Ad</span>
-                                            <button onClick={() => setSettings({...settings, noAd: !settings.noAd})} className={`w-12 h-6 rounded-full relative ${settings.noAd ? 'bg-green-500' : 'bg-slate-600'}`}><div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.noAd ? 'left-7' : 'left-1'}`}></div></button>
+                                            <span className="font-bold text-slate-300">No-Ad Scoring</span>
+                                            <button onClick={() => setSettings({...settings, noAd: !settings.noAd})} className={`w-14 h-8 rounded-full relative transition-colors ${settings.noAd ? 'bg-green-500' : 'bg-slate-600'}`}><div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all shadow ${settings.noAd ? 'left-7' : 'left-1'}`}></div></button>
                                         </div>
                                         <div className="flex justify-between items-center">
-                                            <span>{t.lastSet}</span>
-                                            <button onClick={() => setSettings({...settings, lastSetTieBreak: !settings.lastSetTieBreak})} className="text-sm font-bold bg-slate-900 px-3 py-1 rounded text-blue-400">{settings.lastSetTieBreak ? t.tb : t.advSet}</button>
+                                            <span className="font-bold text-slate-300">{t.lastSet}</span>
+                                            <button onClick={() => setSettings({...settings, lastSetTieBreak: !settings.lastSetTieBreak})} className="text-sm font-bold bg-slate-900 px-4 py-2 rounded text-blue-400 border border-slate-700">{settings.lastSetTieBreak ? t.tb : t.advSet}</button>
                                         </div>
                                     </div>
                                     
-                                    {/* Language Selector */}
-                                    <select value={lang} onChange={e => setLang(e.target.value)} className="w-full bg-slate-800 p-4 rounded-xl border border-slate-700 text-white font-bold uppercase text-xs tracking-widest outline-none focus:border-blue-500">
+                                    <select value={lang} onChange={e => setLang(e.target.value)} className="w-full bg-slate-800 p-4 rounded-xl border border-slate-700 text-white font-bold uppercase text-sm tracking-widest outline-none focus:border-slate-500">
                                         <option value="de">Deutsch</option>
                                         <option value="en">English</option>
                                         <option value="fr">Français</option>
@@ -259,8 +301,7 @@
                                         <option value="es">Español</option>
                                     </select>
 
-                                    <button onClick={() => setShowSettings(false)} className="w-full py-4 bg-blue-600 rounded-xl font-black uppercase text-xl mt-4">OK</button>
-                                    <button onClick={reset} className="w-full py-4 text-red-500 font-bold uppercase">{t.reset}</button>
+                                    <button onClick={() => setShowSettings(false)} className="w-full py-5 bg-blue-600 rounded-xl font-black uppercase text-2xl mt-4 shadow-lg active:scale-95 transition-transform">OK</button>
                                 </div>
                             </div>
                         </div>
