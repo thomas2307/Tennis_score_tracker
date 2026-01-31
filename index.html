@@ -3,16 +3,15 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-    <title>Tennis Score Tracker</title>
+    <title>Tennis Score Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/lucide-react@0.321.0/dist/umd/lucide-react.min.js"></script>
     <style>
-        body { overscroll-behavior-y: contain; user-select: none; -webkit-tap-highlight-color: transparent; background-color: #0f172a; }
-        .score-animate { animation: pop 0.2s ease-out; }
-        @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        body { overscroll-behavior-y: contain; user-select: none; -webkit-tap-highlight-color: transparent; background-color: #0f172a; color: white; font-family: sans-serif; }
+        .modal-active { overflow: hidden; }
     </style>
 </head>
 <body>
@@ -21,142 +20,197 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
-        // --- Logik aus tennisLogic.ts & translations.ts ---
         const TRANSLATIONS = {
-            de: {
-                settingsTitle: "Einstellungen",
-                newMatch: "Neues Match",
-                undo: "Rückgängig",
-                matchOver: "MATCH BEENDET",
-                p1Default: "Spieler 1",
-                p2Default: "Spieler 2",
-                advantageShort: "Vant.",
-                tieBreak: "TIE-BREAK"
-            }
-        };
-
-        const getPointDisplay = (p, opp, isTb, adText) => {
-            if (isTb) return p.toString();
-            const points = ['0', '15', '30', '40'];
-            if (p <= 3 && opp <= 3) return points[p] || '40';
-            if (p > opp) return adText;
-            if (p === opp) return '40';
-            return '40';
+            de: { settings: "Einstellungen", matchType: "Match-Typ", gamesSet: "Spiele pro Satz", noAd: "No-Ad (Entscheidungspunkt)", lang: "Sprache", newMatch: "Neues Match", undo: "Zurück", p1: "Spieler 1", p2: "Spieler 2", adv: "Vant.", tiebreak: "TIE-BREAK" },
+            en: { settings: "Settings", matchType: "Match Type", gamesSet: "Games per Set", noAd: "No-Ad Scoring", lang: "Language", newMatch: "New Match", undo: "Undo", p1: "Player 1", p2: "Player 2", adv: "Adv.", tiebreak: "TIE-BREAK" },
+            fr: { settings: "Paramètres", matchType: "Type de Match", gamesSet: "Jeux par Set", noAd: "No-Ad", lang: "Langue", newMatch: "Nouveau Match", undo: "Annuler", p1: "Joueur 1", p2: "Joueur 2", adv: "Av.", tiebreak: "TIE-BREAK" },
+            es: { settings: "Ajustes", matchType: "Tipo de Partido", gamesSet: "Juegos por Set", noAd: "No-Ad", lang: "Idioma", newMatch: "Nuevo Partido", undo: "Deshacer", p1: "Jugador 1", p2: "Jugador 2", adv: "Vent.", tiebreak: "TIE-BREAK" },
+            it: { settings: "Impostazioni", matchType: "Tipo di Match", gamesSet: "Giochi per Set", noAd: "No-Ad", lang: "Lingua", newMatch: "Nuovo Match", undo: "Indietro", p1: "Giocatore 1", p2: "Giocatore 2", adv: "Vant.", tiebreak: "TIE-BREAK" }
         };
 
         function App() {
-            const [gameState, setGameState] = useState({
-                p1: { name: 'Spieler 1', sets: 0, games: 0, points: 0 },
-                p2: { name: 'Spieler 2', sets: 0, games: 0, points: 0 },
+            const [lang, setLang] = useState('de');
+            const t = TRANSLATIONS[lang];
+            
+            // Einstellungen
+            const [settings, setSettings] = useState({
+                setsToWin: 2,
+                gamesPerSet: 6,
+                noAd: false
+            });
+
+            const [showSettings, setShowSettings] = useState(false);
+            
+            const [state, setState] = useState({
+                p1: { points: 0, games: 0, sets: 0 },
+                p2: { points: 0, games: 0, sets: 0 },
                 finishedSets: [],
                 isTieBreak: false,
                 matchOver: false,
                 history: []
             });
 
-            const t = TRANSLATIONS.de;
+            const getPointLabel = (pts, oppPts) => {
+                if (state.isTieBreak) return pts;
+                if (settings.noAd) {
+                    const labels = ['0', '15', '30', '40'];
+                    return labels[pts] || '40';
+                }
+                if (pts <= 3 && oppPts <= 3) return ['0', '15', '30', '40'][pts] || '40';
+                if (pts > oppPts) return t.adv;
+                return '40';
+            };
 
-            const handlePoint = (scorer) => {
-                if (gameState.matchOver) return;
+            const handlePoint = (winner) => {
+                if (state.matchOver) return;
                 
-                const newState = JSON.parse(JSON.stringify(gameState));
-                newState.history.push(JSON.parse(JSON.stringify(gameState)));
+                // History fix: Wir speichern nur die nötigsten Daten als String, um Memory-Leaks zu verhindern
+                const historySnapshot = JSON.stringify({p1: state.p1, p2: state.p2, fs: state.finishedSets, tb: state.isTieBreak, mo: state.matchOver});
                 
-                const p = scorer === 'p1' ? newState.p1 : newState.p2;
-                const o = scorer === 'p1' ? newState.p2 : newState.p1;
+                let next = JSON.parse(JSON.stringify(state));
+                next.history.push(historySnapshot);
+                if (next.history.length > 10) next.history.shift(); // Max 10 Schritte zurück
+
+                const p = winner === 'p1' ? next.p1 : next.p2;
+                const o = winner === 'p1' ? next.p2 : next.p1;
 
                 p.points++;
 
-                // Einfache Logik-Prüfung (vereinfacht für Single-File)
-                if (!newState.isTieBreak) {
-                    if (p.points >= 4 && (p.points - o.points) >= 2) {
-                        p.points = 0; o.points = 0;
-                        p.games++;
-                    }
-                } else {
-                    if (p.points >= 7 && (p.points - o.points) >= 2) {
-                        p.points = 0; o.points = 0;
-                        p.games++;
-                        newState.isTieBreak = false;
+                // Game Logic
+                const isGameWon = next.isTieBreak 
+                    ? (p.points >= 7 && p.points - o.points >= 2)
+                    : (settings.noAd ? p.points >= 4 : (p.points >= 4 && p.points - o.points >= 2));
+
+                if (isGameWon) {
+                    p.points = 0; o.points = 0;
+                    p.games++;
+                    next.isTieBreak = false;
+
+                    // Set Logic
+                    const isSetWon = (p.games >= settings.gamesPerSet && p.games - o.games >= 2) || p.games > settings.gamesPerSet;
+                    
+                    if (isSetWon) {
+                        p.sets++;
+                        next.finishedSets.push({p1: next.p1.games, p2: next.p2.games});
+                        next.p1.games = 0; next.p2.games = 0;
+                        if (p.sets >= settings.setsToWin) next.matchOver = true;
+                    } else if (p.games === settings.gamesPerSet && o.games === settings.gamesPerSet) {
+                        next.isTieBreak = true;
                     }
                 }
+                setState(next);
+            };
 
-                if (p.games >= 6 && (p.games - o.games) >= 2) {
-                    p.sets++;
-                    newState.finishedSets.push({p1: newState.p1.games, p2: newState.p2.games});
-                    newState.p1.games = 0; newState.p2.games = 0;
-                    if (p.sets >= 2) newState.matchOver = true;
-                } else if (p.games === 6 && o.games === 6) {
-                    newState.isTieBreak = true;
-                }
-
-                setGameState(newState);
+            const undo = () => {
+                if (state.history.length === 0) return;
+                const last = JSON.parse(state.history.pop());
+                setState({ ...state, p1: last.p1, p2: last.p2, finishedSets: last.fs, isTieBreak: last.tb, matchOver: last.mo });
             };
 
             return (
-                <div className="flex flex-col h-screen max-w-md mx-auto bg-slate-950 text-white overflow-hidden shadow-2xl">
+                <div className="flex flex-col h-screen max-w-md mx-auto bg-slate-950 shadow-2xl overflow-hidden">
+                    {/* Header mit Settings Button */}
+                    <div className="p-4 flex justify-between items-center border-b border-slate-800">
+                        <span className="font-black text-blue-500 tracking-tighter">TENNIS TRACKER</span>
+                        <button onClick={() => setShowSettings(true)} className="p-2 bg-slate-800 rounded-full">
+                           <i data-lucide="settings" className="w-5 h-5 text-slate-300"></i>
+                        </button>
+                    </div>
+
                     {/* Scoreboard */}
-                    <div className="bg-slate-900 p-6 rounded-b-[3rem] border-b border-slate-800">
-                        <div className="flex justify-between items-center mb-6">
-                            <span className="text-xs font-black tracking-widest text-blue-500 uppercase">Tennis Pro Score</span>
-                            {gameState.isTieBreak && <span className="bg-yellow-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">TIE-BREAK</span>}
-                        </div>
-                        
-                        <div className="space-y-6">
-                            {[ 'p1', 'p2' ].map(player => (
-                                <div key={player} className="flex items-center justify-between">
-                                    <div className="flex flex-col">
-                                        <span className="text-lg font-bold">{gameState[player].name}</span>
-                                        <div className="flex gap-1 mt-1">
-                                            {gameState.finishedSets.map((s, i) => (
-                                                <span key={i} className="text-slate-500 text-sm font-mono">{s[player]}</span>
+                    <div className="p-6 bg-slate-900 border-b border-slate-800">
+                        <div className="space-y-8">
+                            {['p1', 'p2'].map(pKey => (
+                                <div key={pKey} className="flex items-center justify-between">
+                                    <div>
+                                        <div className="text-slate-400 text-xs font-bold uppercase">{t[pKey]}</div>
+                                        <div className="flex gap-2 mt-1">
+                                            {state.finishedSets.map((s, i) => (
+                                                <span key={i} className="bg-slate-800 px-2 py-1 rounded text-sm text-slate-500">{s[pKey]}</span>
                                             ))}
-                                            <span className="text-blue-400 text-sm font-mono font-bold">{gameState[player].games}</span>
+                                            <span className="text-2xl font-bold text-blue-400">{state[pKey].games}</span>
                                         </div>
                                     </div>
-                                    <div className="text-5xl font-black text-emerald-400 font-mono">
-                                        {getPointDisplay(gameState[player].points, player === 'p1' ? gameState.p2.points : gameState.p1.points, gameState.isTieBreak, t.advantageShort)}
+                                    <div className="text-6xl font-black text-emerald-400 font-mono">
+                                        {getPointLabel(state[pKey].points, pKey === 'p1' ? state.p2.points : state.p1.points)}
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* Steuerung */}
+                    {/* Controls */}
                     <div className="flex-1 p-4 flex flex-col gap-4">
-                        {!gameState.matchOver ? (
+                        {!state.matchOver ? (
                             <div className="flex-1 flex gap-4">
-                                <button onClick={() => handlePoint('p1')} className="flex-1 bg-blue-600 rounded-3xl shadow-[0_8px_0_rgb(29,78,216)] active:shadow-none active:translate-y-2 transition-all flex flex-col items-center justify-center">
-                                    <span className="text-6xl font-black">+1</span>
-                                    <span className="text-xs uppercase font-bold opacity-70">{gameState.p1.name}</span>
-                                </button>
-                                <button onClick={() => handlePoint('p2')} className="flex-1 bg-emerald-600 rounded-3xl shadow-[0_8px_0_rgb(5,150,105)] active:shadow-none active:translate-y-2 transition-all flex flex-col items-center justify-center">
-                                    <span className="text-6xl font-black">+1</span>
-                                    <span className="text-xs uppercase font-bold opacity-70">{gameState.p2.name}</span>
-                                </button>
+                                <button onClick={() => handlePoint('p1')} className="flex-1 bg-blue-600 rounded-3xl text-4xl font-black shadow-[0_8px_0_rgb(29,78,216)] active:translate-y-1 active:shadow-none transition-all">P1</button>
+                                <button onClick={() => handlePoint('p2')} className="flex-1 bg-emerald-600 rounded-3xl text-4xl font-black shadow-[0_8px_0_rgb(5,150,105)] active:translate-y-1 active:shadow-none transition-all">P2</button>
                             </div>
                         ) : (
-                            <div className="flex-1 bg-yellow-500 rounded-3xl flex flex-col items-center justify-center text-slate-900 p-4 text-center">
-                                <h2 className="text-4xl font-black mb-4 uppercase leading-none">{t.matchOver}</h2>
-                                <button onClick={() => location.reload()} className="bg-slate-950 text-white px-8 py-3 rounded-full font-bold">Neustart</button>
+                            <div className="flex-1 bg-yellow-500 rounded-3xl flex flex-col items-center justify-center text-slate-900">
+                                <h2 className="text-3xl font-black mb-4">{t.matchOver}</h2>
+                                <button onClick={() => location.reload()} className="bg-slate-900 text-white px-8 py-3 rounded-full font-bold uppercase">Reset</button>
                             </div>
                         )}
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                            <button onClick={() => gameState.history.length > 0 && setGameState(gameState.history.pop())} className="bg-slate-800 py-4 rounded-2xl font-bold text-slate-400 active:bg-slate-700">
-                                {t.undo}
-                            </button>
-                            <button onClick={() => location.reload()} className="bg-slate-800 py-4 rounded-2xl font-bold text-slate-400 active:bg-slate-700">
-                                Reset
-                            </button>
-                        </div>
+                        <button onClick={undo} className="py-4 bg-slate-800 rounded-2xl font-bold text-slate-400 uppercase tracking-widest text-sm">
+                            {t.undo}
+                        </button>
                     </div>
+
+                    {/* Settings Modal */}
+                    {showSettings && (
+                        <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-6 z-50">
+                            <div className="bg-slate-900 w-full rounded-3xl p-6 border border-slate-700">
+                                <h2 className="text-2xl font-bold mb-6 text-blue-400">{t.settings}</h2>
+                                
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 uppercase">{t.matchType}</label>
+                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                            <button onClick={() => setSettings({...settings, setsToWin: 2})} className={`p-3 rounded-xl border ${settings.setsToWin === 2 ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700'}`}>Best of 3</button>
+                                            <button onClick={() => setSettings({...settings, setsToWin: 3})} className={`p-3 rounded-xl border ${settings.setsToWin === 3 ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700'}`}>Best of 5</button>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 uppercase">{t.gamesSet}</label>
+                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                            <button onClick={() => setSettings({...settings, gamesPerSet: 4})} className={`p-3 rounded-xl border ${settings.gamesPerSet === 4 ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700'}`}>4 Games</button>
+                                            <button onClick={() => setSettings({...settings, gamesPerSet: 6})} className={`p-3 rounded-xl border ${settings.gamesPerSet === 6 ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700'}`}>6 Games</button>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-bold text-sm">{t.noAd}</span>
+                                        <button onClick={() => setSettings({...settings, noAd: !settings.noAd})} className={`w-12 h-6 rounded-full transition-colors ${settings.noAd ? 'bg-emerald-500' : 'bg-slate-700'} relative`}>
+                                            <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.noAd ? 'left-7' : 'left-1'}`}></div>
+                                        </button>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-bold text-slate-500 uppercase">{t.lang}</label>
+                                        <select value={lang} onChange={(e) => setLang(e.target.value)} className="w-full mt-2 bg-slate-800 p-3 rounded-xl border border-slate-700 text-white">
+                                            <option value="de">Deutsch</option>
+                                            <option value="en">English</option>
+                                            <option value="fr">Français</option>
+                                            <option value="es">Español</option>
+                                            <option value="it">Italiano</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <button onClick={() => setShowSettings(false)} className="w-full mt-8 bg-blue-600 py-4 rounded-2xl font-bold uppercase">Fertig</button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
+        // Icons initialisieren
+        setTimeout(() => lucide.createIcons(), 100);
     </script>
 </body>
 </html>
