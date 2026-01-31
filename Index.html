@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+    <title>Tennis Score Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide-react@0.321.0/dist/umd/lucide-react.min.js"></script>
+    <style>
+        body { overscroll-behavior-y: contain; user-select: none; -webkit-tap-highlight-color: transparent; background-color: #0f172a; }
+        .score-animate { animation: pop 0.2s ease-out; }
+        @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- Logik aus tennisLogic.ts & translations.ts ---
+        const TRANSLATIONS = {
+            de: {
+                settingsTitle: "Einstellungen",
+                newMatch: "Neues Match",
+                undo: "Rückgängig",
+                matchOver: "MATCH BEENDET",
+                p1Default: "Spieler 1",
+                p2Default: "Spieler 2",
+                advantageShort: "Vant.",
+                tieBreak: "TIE-BREAK"
+            }
+        };
+
+        const getPointDisplay = (p, opp, isTb, adText) => {
+            if (isTb) return p.toString();
+            const points = ['0', '15', '30', '40'];
+            if (p <= 3 && opp <= 3) return points[p] || '40';
+            if (p > opp) return adText;
+            if (p === opp) return '40';
+            return '40';
+        };
+
+        function App() {
+            const [gameState, setGameState] = useState({
+                p1: { name: 'Spieler 1', sets: 0, games: 0, points: 0 },
+                p2: { name: 'Spieler 2', sets: 0, games: 0, points: 0 },
+                finishedSets: [],
+                isTieBreak: false,
+                matchOver: false,
+                history: []
+            });
+
+            const t = TRANSLATIONS.de;
+
+            const handlePoint = (scorer) => {
+                if (gameState.matchOver) return;
+                
+                const newState = JSON.parse(JSON.stringify(gameState));
+                newState.history.push(JSON.parse(JSON.stringify(gameState)));
+                
+                const p = scorer === 'p1' ? newState.p1 : newState.p2;
+                const o = scorer === 'p1' ? newState.p2 : newState.p1;
+
+                p.points++;
+
+                // Einfache Logik-Prüfung (vereinfacht für Single-File)
+                if (!newState.isTieBreak) {
+                    if (p.points >= 4 && (p.points - o.points) >= 2) {
+                        p.points = 0; o.points = 0;
+                        p.games++;
+                    }
+                } else {
+                    if (p.points >= 7 && (p.points - o.points) >= 2) {
+                        p.points = 0; o.points = 0;
+                        p.games++;
+                        newState.isTieBreak = false;
+                    }
+                }
+
+                if (p.games >= 6 && (p.games - o.games) >= 2) {
+                    p.sets++;
+                    newState.finishedSets.push({p1: newState.p1.games, p2: newState.p2.games});
+                    newState.p1.games = 0; newState.p2.games = 0;
+                    if (p.sets >= 2) newState.matchOver = true;
+                } else if (p.games === 6 && o.games === 6) {
+                    newState.isTieBreak = true;
+                }
+
+                setGameState(newState);
+            };
+
+            return (
+                <div className="flex flex-col h-screen max-w-md mx-auto bg-slate-950 text-white overflow-hidden shadow-2xl">
+                    {/* Scoreboard */}
+                    <div className="bg-slate-900 p-6 rounded-b-[3rem] border-b border-slate-800">
+                        <div className="flex justify-between items-center mb-6">
+                            <span className="text-xs font-black tracking-widest text-blue-500 uppercase">Tennis Pro Score</span>
+                            {gameState.isTieBreak && <span className="bg-yellow-500 text-black text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">TIE-BREAK</span>}
+                        </div>
+                        
+                        <div className="space-y-6">
+                            {[ 'p1', 'p2' ].map(player => (
+                                <div key={player} className="flex items-center justify-between">
+                                    <div className="flex flex-col">
+                                        <span className="text-lg font-bold">{gameState[player].name}</span>
+                                        <div className="flex gap-1 mt-1">
+                                            {gameState.finishedSets.map((s, i) => (
+                                                <span key={i} className="text-slate-500 text-sm font-mono">{s[player]}</span>
+                                            ))}
+                                            <span className="text-blue-400 text-sm font-mono font-bold">{gameState[player].games}</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-5xl font-black text-emerald-400 font-mono">
+                                        {getPointDisplay(gameState[player].points, player === 'p1' ? gameState.p2.points : gameState.p1.points, gameState.isTieBreak, t.advantageShort)}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Steuerung */}
+                    <div className="flex-1 p-4 flex flex-col gap-4">
+                        {!gameState.matchOver ? (
+                            <div className="flex-1 flex gap-4">
+                                <button onClick={() => handlePoint('p1')} className="flex-1 bg-blue-600 rounded-3xl shadow-[0_8px_0_rgb(29,78,216)] active:shadow-none active:translate-y-2 transition-all flex flex-col items-center justify-center">
+                                    <span className="text-6xl font-black">+1</span>
+                                    <span className="text-xs uppercase font-bold opacity-70">{gameState.p1.name}</span>
+                                </button>
+                                <button onClick={() => handlePoint('p2')} className="flex-1 bg-emerald-600 rounded-3xl shadow-[0_8px_0_rgb(5,150,105)] active:shadow-none active:translate-y-2 transition-all flex flex-col items-center justify-center">
+                                    <span className="text-6xl font-black">+1</span>
+                                    <span className="text-xs uppercase font-bold opacity-70">{gameState.p2.name}</span>
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex-1 bg-yellow-500 rounded-3xl flex flex-col items-center justify-center text-slate-900 p-4 text-center">
+                                <h2 className="text-4xl font-black mb-4 uppercase leading-none">{t.matchOver}</h2>
+                                <button onClick={() => location.reload()} className="bg-slate-950 text-white px-8 py-3 rounded-full font-bold">Neustart</button>
+                            </div>
+                        )}
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                            <button onClick={() => gameState.history.length > 0 && setGameState(gameState.history.pop())} className="bg-slate-800 py-4 rounded-2xl font-bold text-slate-400 active:bg-slate-700">
+                                {t.undo}
+                            </button>
+                            <button onClick={() => location.reload()} className="bg-slate-800 py-4 rounded-2xl font-bold text-slate-400 active:bg-slate-700">
+                                Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
