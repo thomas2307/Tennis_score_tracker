@@ -3,17 +3,19 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-    <title>Tennis Pro Split</title>
+    <title>Tennis Big Score</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;700&family=Orbitron:wght@900&display=swap');
-        body { background-color: #0f172a; overscroll-behavior-y: contain; user-select: none; font-family: 'Chakra Petch', sans-serif; }
-        .score-font { font-family: 'Orbitron', sans-serif; }
-        .vertical-text { writing-mode: vertical-rl; text-orientation: mixed; }
+        @import url('https://fonts.googleapis.com/css2?family=Teko:wght@300;500;700&display=swap');
+        body { background-color: #000; overscroll-behavior-y: contain; user-select: none; font-family: 'Teko', sans-serif; }
+        /* Spezielle Schrift für Zahlen, damit sie schmal und hoch sind (gut fürs Handy) */
+        .big-num { font-size: clamp(3rem, 12vw, 5rem); line-height: 1; font-weight: 500; }
+        .mega-num { font-size: clamp(5rem, 20vw, 8rem); line-height: 0.9; font-weight: 700; }
+        .label-text { font-size: 0.8rem; letter-spacing: 0.1em; opacity: 0.6; text-transform: uppercase; font-family: sans-serif; font-weight: bold;}
     </style>
 </head>
 <body>
@@ -23,9 +25,9 @@
         const { useState, useEffect } = React;
 
         const TRANSLATIONS = {
-            de: { settings: "Einstellungen", matchType: "Match-Typ", gamesSet: "Spiele/Satz", noAd: "No-Ad", lang: "Sprache", reset: "Reset", undo: "Undo", p1Def: "Spieler 1", p2Def: "Spieler 2", adv: "AD", tiebreak: "TIE-BREAK", whoServes: "Wer beginnt?", lastSet: "Letzter Satz", tb: "Tie-Break", advSet: "Ausspielen" },
-            en: { settings: "Settings", matchType: "Match Type", gamesSet: "Games/Set", noAd: "No-Ad", lang: "Language", reset: "Reset", undo: "Undo", p1Def: "Player 1", p2Def: "Player 2", adv: "AD", tiebreak: "TIE-BREAK", whoServes: "First Server?", lastSet: "Decider Rule", tb: "Tie-Break", advSet: "Advantage" },
-            fr: { settings: "Réglages", matchType: "Type", gamesSet: "Jeux/Set", noAd: "No-Ad", lang: "Langue", reset: "Reset", undo: "Annuler", p1Def: "Joueur 1", p2Def: "Joueur 2", adv: "AV", tiebreak: "TIE-BREAK", whoServes: "Serveur ?", lastSet: "Dernier Set", tb: "Tie-Break", advSet: "Avantage" }
+            de: { settings: "Einstellungen", matchType: "Match-Typ", gamesSet: "Spiele/Satz", noAd: "No-Ad", lang: "Sprache", reset: "Neustart", undo: "Zurück", p1Def: "Spieler 1", p2Def: "Spieler 2", adv: "AD", tiebreak: "TIE-BREAK", whoServes: "Aufschlag Start", lastSet: "Letzter Satz", tb: "Tie-Break", advSet: "Ausspielen" },
+            en: { settings: "Settings", matchType: "Match Type", gamesSet: "Games/Set", noAd: "No-Ad", lang: "Language", reset: "Reset", undo: "Undo", p1Def: "Player 1", p2Def: "Player 2", adv: "AD", tiebreak: "TIE-BREAK", whoServes: "First Server", lastSet: "Final Set", tb: "Tie-Break", advSet: "Advantage" },
+            fr: { settings: "Réglages", matchType: "Type", gamesSet: "Jeux/Set", noAd: "No-Ad", lang: "Langue", reset: "Reset", undo: "Annuler", p1Def: "Joueur 1", p2Def: "Joueur 2", adv: "AV", tiebreak: "TIE-BREAK", whoServes: "Service", lastSet: "Dernier Set", tb: "Tie-Break", advSet: "Avantage" }
         };
 
         function App() {
@@ -33,310 +35,248 @@
             const t = TRANSLATIONS[lang] || TRANSLATIONS.de;
             const [showSettings, setShowSettings] = useState(false);
 
-            // Settings State
             const [settings, setSettings] = useState({
                 p1Name: "", p2Name: "",
                 setsToWin: 2, gamesPerSet: 6, noAd: false,
-                lastSetTieBreak: true, // true = TB at 6-6, false = play until 2 games ahead
-                initialServer: 'p1' 
+                lastSetTieBreak: true, initialServer: 'p1' 
             });
 
-            // Game State
             const [state, setState] = useState({
                 p1: { pts: 0, gms: 0, sts: 0 },
                 p2: { pts: 0, gms: 0, sts: 0 },
-                fSets: [],
-                isTB: false,
-                over: false,
-                server: 'p1', // Current server
-                history: []
+                fSets: [], isTB: false, over: false, server: 'p1', history: []
             });
 
-            // Init server on load
-            useEffect(() => {
-                setState(s => ({...s, server: settings.initialServer}));
-            }, []);
+            useEffect(() => { setState(s => ({...s, server: settings.initialServer})); }, []);
 
-            const getDisplayScore = (pKey, oppKey) => {
-                const p = state[pKey].pts;
-                const o = state[oppKey].pts;
+            const getPointStr = (p, o) => {
                 if (state.isTB) return p;
                 if (settings.noAd) return ['0','15','30','40'][p] || '40';
                 if (p <= 3 && o <= 3) return ['0','15','30','40'][p] || '40';
-                if (p > o) return t.adv;
-                return '40';
+                return p > o ? t.adv : '40';
             };
 
-            const handlePoint = (winnerKey) => {
+            const handlePoint = (w) => {
                 if (state.over) return;
                 
-                // History Snapshot
-                const snap = JSON.stringify(state);
+                // MEMORY FIX: Wir speichern NUR die reinen Daten, nicht die History selbst!
+                const snapshot = {
+                    p1: {...state.p1}, p2: {...state.p2}, 
+                    fSets: [...state.fSets], isTB: state.isTB, 
+                    over: state.over, server: state.server
+                };
+                
                 let n = JSON.parse(JSON.stringify(state));
-                n.history.push(snap); 
-                if (n.history.length > 10) n.history.shift();
+                // Wichtig: History Array wird im State belassen, aber nicht in den Snapshot gepackt
+                n.history = [...state.history, snapshot];
+                if (n.history.length > 20) n.history.shift(); // Limit history size
 
-                const p = winnerKey === 'p1' ? n.p1 : n.p2;
-                const o = winnerKey === 'p1' ? n.p2 : n.p1;
-                const isP1 = winnerKey === 'p1';
-
+                const p = w === 'p1' ? n.p1 : n.p2; const o = w === 'p1' ? n.p2 : n.p1;
                 p.pts++;
 
-                // Logic Checks
-                let gameFinished = false;
-                
+                let gameWon = false;
                 if (n.isTB) {
-                    // Tie Break Logic (7 points, 2 ahead)
-                    if (p.pts >= 7 && (p.pts - o.pts) >= 2) {
-                        gameFinished = true;
-                    }
+                    if (p.pts >= 7 && (p.pts - o.pts) >= 2) gameWon = true;
+                    // TB Service Rotation: After 1st point, then every 2 points
+                    const total = p.pts + o.pts;
+                    if (total % 2 === 1) n.server = n.server === 'p1' ? 'p2' : 'p1';
                 } else {
-                    // Normal Game Logic
-                    if (settings.noAd) {
-                        if (p.pts >= 4) gameFinished = true;
-                    } else {
-                        if (p.pts >= 4 && (p.pts - o.pts) >= 2) gameFinished = true;
-                    }
+                    if (settings.noAd) { if (p.pts >= 4) gameWon = true; }
+                    else { if (p.pts >= 4 && (p.pts - o.pts) >= 2) gameWon = true; }
                 }
 
-                // Handle Service Rotation within Tie Break (After 1st point, then every 2)
-                if (n.isTB && !gameFinished) {
-                    const totalPoints = n.p1.pts + n.p2.pts;
-                    // Logic: sum is 1, 3, 5, 7... switch server
-                    if ((totalPoints % 2) === 1) {
-                         n.server = n.server === 'p1' ? 'p2' : 'p1';
-                    }
-                }
-
-                if (gameFinished) {
-                    p.pts = 0; o.pts = 0;
-                    p.gms++;
+                if (gameWon) {
+                    p.pts = 0; o.pts = 0; p.gms++;
+                    if (!n.isTB) n.server = n.server === 'p1' ? 'p2' : 'p1';
+                    else n.server = n.server === 'p1' ? 'p2' : 'p1'; // Simplified rotation after set/tb
                     
-                    // Switch server after every game (unless match over)
-                    // If we were in TB, the person who STARTED the TB served first.
-                    // The rotation continues naturally in tennis logic usually.
-                    // Simplified: Just toggle server after every completed unit.
-                    if (!n.isTB) {
-                         n.server = n.server === 'p1' ? 'p2' : 'p1';
-                    } else {
-                        // End of TB means end of Set. Next set starts with the person who did NOT start the TB?
-                        // Usually: Start of TB server = A. Next set server = B.
-                        // We simply toggle from whoever started the TB. 
-                        // To keep it robust without tracking "tbStarter", we just toggle from current.
-                        n.server = n.server === 'p1' ? 'p2' : 'p1'; 
-                    }
                     n.isTB = false;
-
-                    // Set Logic
                     const limit = settings.gamesPerSet;
-                    const diff = p.gms - o.gms;
+                    
+                    // Set Logic
                     let setWon = false;
-
-                    if (p.gms >= limit && diff >= 2) setWon = true;
-                    if (p.gms === limit + 1 && o.gms === limit - 1 && !settings.lastSetTieBreak && (n.p1.sts + n.p2.sts) === (settings.setsToWin * 2 - 2)) {
-                        // Advantage Set handling (Last set) - Continue playing
-                        setWon = false; 
-                    }
+                    if (p.gms >= limit && (p.gms - o.gms) >= 2) setWon = true;
+                    
+                    // Advantage Set Check (Last Set)
+                    const isDecider = (n.p1.sts + n.p2.sts) === (settings.setsToWin * 2 - 2);
+                    if (p.gms === limit + 1 && o.gms === limit - 1 && isDecider && !settings.lastSetTieBreak) setWon = false;
 
                     if (setWon) {
-                        p.sts++;
-                        n.fSets.push({p1: n.p1.gms, p2: n.p2.gms});
+                        p.sts++; n.fSets.push({p1: n.p1.gms, p2: n.p2.gms});
                         n.p1.gms = 0; n.p2.gms = 0;
                         if (p.sts >= settings.setsToWin) n.over = true;
                     } else if (p.gms === limit && o.gms === limit) {
-                        // Check if it is the decisive set and if we play advantage
-                        const isDecider = (n.p1.sts + n.p2.sts) === (settings.setsToWin * 2 - 2);
-                        if (isDecider && !settings.lastSetTieBreak) {
-                            // No Tie Break in last set
-                        } else {
-                            n.isTB = true;
-                        }
+                        if (!isDecider || settings.lastSetTieBreak) n.isTB = true;
                     }
                 }
-
                 setState(n);
             };
 
             const undo = () => {
                 if (state.history.length > 0) {
-                    const prev = JSON.parse(state.history.pop());
-                    setState(prev);
+                    const prev = state.history[state.history.length - 1];
+                    // Wir stellen den State wieder her, behalten aber das History Array (minus den letzten Eintrag)
+                    const newHistory = state.history.slice(0, -1);
+                    setState({...prev, history: newHistory});
                 }
             };
 
             const reset = () => { if(confirm(t.reset + "?")) location.reload(); };
 
             return (
-                <div className="flex flex-col h-screen w-full bg-slate-950 overflow-hidden relative">
+                <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden">
                     
-                    {/* TOP BAR (History & Settings) */}
-                    <div className="h-16 flex items-center justify-between px-4 bg-slate-900 border-b border-slate-800 z-10 shrink-0">
-                        <div className="flex gap-1 text-slate-400 font-mono text-sm">
-                            {state.fSets.map((s, i) => (
-                                <div key={i} className="flex flex-col leading-none border border-slate-700 px-1 py-1 rounded">
-                                    <span className={s.p1 > s.p2 ? "text-blue-400 font-bold" : ""}>{s.p1}</span>
-                                    <span className={s.p2 > s.p1 ? "text-emerald-400 font-bold" : ""}>{s.p2}</span>
-                                </div>
+                    {/* HEADER (Minimal) */}
+                    <div className="h-12 flex justify-between items-center px-4 bg-slate-900 border-b border-slate-800 shrink-0 z-20">
+                        <button onClick={undo} className="text-slate-400 font-bold uppercase text-sm tracking-wider flex items-center gap-2 active:scale-95">
+                            <i className="fa-solid fa-rotate-left"></i> {t.undo}
+                        </button>
+                        
+                        {/* Finished Sets Display */}
+                        <div className="flex gap-2">
+                             {state.fSets.map((s, i) => (
+                                <span key={i} className="text-slate-500 font-mono text-sm bg-slate-800 px-1 rounded">
+                                    {s.p1}-{s.p2}
+                                </span>
                             ))}
                         </div>
-                        <div className="flex gap-4">
-                            <button onClick={undo} className="text-slate-500 font-bold text-xs uppercase tracking-widest px-4 py-2 border border-slate-700 rounded-lg active:bg-slate-800">{t.undo}</button>
-                            <button onClick={() => setShowSettings(true)} className="text-white bg-slate-800 p-2 rounded-lg border border-slate-700"><i className="fa-solid fa-gear"></i></button>
-                        </div>
+
+                        <button onClick={() => setShowSettings(true)} className="text-slate-400 text-lg active:scale-95">
+                            <i className="fa-solid fa-gear"></i>
+                        </button>
                     </div>
 
-                    {/* MAIN SPLIT AREA */}
+                    {/* MAIN SCORE AREA */}
                     <div className="flex-1 flex w-full relative">
-                        
-                        {/* CENTER DIVIDER */}
-                        <div className="absolute left-1/2 top-0 bottom-0 w-px bg-slate-800 z-0 transform -translate-x-1/2"></div>
-                        
-                        {/* LEFT (P1) */}
-                        <div className="flex-1 bg-slate-900/50 flex flex-col items-center justify-between py-6 border-r border-slate-800/50 relative z-0">
-                            {/* Name & Service */}
-                            <div className="text-center w-full px-2">
-                                <div className="h-6 mb-2 flex justify-center items-center">
-                                    {state.server === 'p1' && !state.over && <span className="text-xl animate-bounce">🎾</span>}
+                        {/* Divider Line */}
+                        <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-slate-800 z-10 transform -translate-x-1/2"></div>
+
+                        {/* PLAYER 1 (Left/Blue) */}
+                        <div className="flex-1 flex flex-col bg-slate-900 relative">
+                            {/* Service Indicator P1 */}
+                            <div className={`absolute top-2 left-2 right-2 h-1 ${state.server === 'p1' && !state.over ? 'bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.8)]' : 'bg-transparent'} rounded-full transition-all`}></div>
+
+                            <div className="flex-1 flex flex-col justify-start pt-6 items-center border-r border-slate-800/50">
+                                {/* SETS */}
+                                <div className="flex flex-col items-center mb-2">
+                                    <span className="label-text text-blue-500">SETS</span>
+                                    <span className="big-num text-blue-500">{state.p1.sts}</span>
                                 </div>
-                                <h2 className="text-blue-400 font-bold text-xl uppercase truncate w-full">{settings.p1Name || t.p1Def}</h2>
-                                <div className="text-blue-600/50 text-xs font-bold mt-1">SET: {state.p1.sts}</div>
+                                {/* GAMES */}
+                                <div className="flex flex-col items-center mb-2">
+                                    <span className="label-text text-blue-400">GAMES</span>
+                                    <span className="big-num text-blue-400">{state.p1.gms}</span>
+                                </div>
+                                {/* POINTS */}
+                                <div className="flex flex-col items-center flex-1 justify-center">
+                                    <span className="label-text text-white">POINTS</span>
+                                    <span className="mega-num text-white tracking-tighter">{getPointStr(state.p1.pts, state.p2.pts)}</span>
+                                </div>
                             </div>
                             
-                            {/* Big Score */}
-                            <div className="text-center my-4">
-                                <div className="text-blue-500 text-3xl font-bold mb-2 font-mono">{state.p1.gms}</div>
-                                <div className="score-font text-[5rem] leading-none text-blue-400 font-black tracking-tighter">
-                                    {getDisplayScore('p1', 'p2')}
-                                </div>
-                            </div>
-
-                            {/* Button */}
-                            <button onClick={() => handlePoint('p1')} className="w-4/5 py-8 bg-blue-600 rounded-2xl shadow-[0_4px_0_rgb(30,58,138)] active:shadow-none active:translate-y-1 transition-all flex flex-col items-center">
-                                <span className="text-white font-black text-2xl uppercase truncate max-w-full px-2">{settings.p1Name || "P1"}</span>
-                                <span className="text-blue-200 text-sm font-bold">+1</span>
+                            {/* BIG BUTTON P1 */}
+                            <button onClick={() => handlePoint('p1')} className="h-32 bg-blue-700 active:bg-blue-600 w-full flex flex-col items-center justify-center border-t border-blue-500 shadow-[inset_0_0_30px_rgba(0,0,0,0.3)] transition-all z-10">
+                                <span className="text-2xl font-bold uppercase tracking-wider">{settings.p1Name || "P1"}</span>
+                                <span className="text-xs opacity-75 font-bold">+ POINT</span>
                             </button>
                         </div>
 
-                        {/* RIGHT (P2) */}
-                        <div className="flex-1 bg-slate-950 flex flex-col items-center justify-between py-6 relative z-0">
-                             {/* Name & Service */}
-                             <div className="text-center w-full px-2">
-                                <div className="h-6 mb-2 flex justify-center items-center">
-                                    {state.server === 'p2' && !state.over && <span className="text-xl animate-bounce">🎾</span>}
+                        {/* PLAYER 2 (Right/Green) */}
+                        <div className="flex-1 flex flex-col bg-slate-950 relative">
+                             {/* Service Indicator P2 */}
+                             <div className={`absolute top-2 left-2 right-2 h-1 ${state.server === 'p2' && !state.over ? 'bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.8)]' : 'bg-transparent'} rounded-full transition-all`}></div>
+
+                            <div className="flex-1 flex flex-col justify-start pt-6 items-center">
+                                {/* SETS */}
+                                <div className="flex flex-col items-center mb-2">
+                                    <span className="label-text text-emerald-600">SETS</span>
+                                    <span className="big-num text-emerald-600">{state.p2.sts}</span>
                                 </div>
-                                <h2 className="text-emerald-400 font-bold text-xl uppercase truncate w-full">{settings.p2Name || t.p2Def}</h2>
-                                <div className="text-emerald-600/50 text-xs font-bold mt-1">SET: {state.p2.sts}</div>
-                            </div>
-                            
-                            {/* Big Score */}
-                            <div className="text-center my-4">
-                                <div className="text-emerald-500 text-3xl font-bold mb-2 font-mono">{state.p2.gms}</div>
-                                <div className="score-font text-[5rem] leading-none text-emerald-400 font-black tracking-tighter">
-                                    {getDisplayScore('p2', 'p1')}
+                                {/* GAMES */}
+                                <div className="flex flex-col items-center mb-2">
+                                    <span className="label-text text-emerald-500">GAMES</span>
+                                    <span className="big-num text-emerald-500">{state.p2.gms}</span>
+                                </div>
+                                {/* POINTS */}
+                                <div className="flex flex-col items-center flex-1 justify-center">
+                                    <span className="label-text text-white">POINTS</span>
+                                    <span className="mega-num text-white tracking-tighter">{getPointStr(state.p2.pts, state.p1.pts)}</span>
                                 </div>
                             </div>
 
-                            {/* Button */}
-                            <button onClick={() => handlePoint('p2')} className="w-4/5 py-8 bg-emerald-600 rounded-2xl shadow-[0_4px_0_rgb(6,78,59)] active:shadow-none active:translate-y-1 transition-all flex flex-col items-center">
-                                <span className="text-white font-black text-2xl uppercase truncate max-w-full px-2">{settings.p2Name || "P2"}</span>
-                                <span className="text-emerald-200 text-sm font-bold">+1</span>
+                             {/* BIG BUTTON P2 */}
+                             <button onClick={() => handlePoint('p2')} className="h-32 bg-emerald-700 active:bg-emerald-600 w-full flex flex-col items-center justify-center border-t border-emerald-500 shadow-[inset_0_0_30px_rgba(0,0,0,0.3)] transition-all z-10">
+                                <span className="text-2xl font-bold uppercase tracking-wider">{settings.p2Name || "P2"}</span>
+                                <span className="text-xs opacity-75 font-bold">+ POINT</span>
                             </button>
                         </div>
 
-                        {/* Tie Break Indicator (Overlay) */}
+                        {/* OVERLAYS */}
                         {state.isTB && (
-                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-500 text-black px-4 py-1 rounded-full font-black text-sm shadow-xl z-20 animate-pulse whitespace-nowrap">
+                            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-500 text-black px-6 py-2 rounded-full font-black text-xl shadow-xl z-30 animate-pulse whitespace-nowrap border-4 border-black">
                                 {t.tiebreak}
                             </div>
                         )}
-                         {/* Match Over Overlay */}
-                         {state.over && (
-                            <div className="absolute inset-0 bg-black/80 z-30 flex flex-col items-center justify-center p-6 text-center backdrop-blur-sm">
-                                <h1 className="text-4xl font-black text-white mb-2">MATCH OVER</h1>
-                                <div className="text-2xl font-bold mb-8 text-slate-300">
+                        {state.over && (
+                             <div className="absolute inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-6 text-center backdrop-blur-md">
+                                <h1 className="text-5xl font-black text-white mb-4 uppercase">Match Over</h1>
+                                <div className="text-3xl font-bold mb-10 text-slate-300 font-mono">
                                     {state.p1.sts > state.p2.sts ? (settings.p1Name || "P1") : (settings.p2Name || "P2")} Wins!
                                 </div>
-                                <button onClick={reset} className="bg-white text-black px-8 py-3 rounded-full font-bold uppercase">Neues Match</button>
+                                <button onClick={reset} className="bg-white text-black px-10 py-4 rounded-full font-bold uppercase text-xl shadow-lg hover:scale-105 transition-transform">{t.reset}</button>
                             </div>
                         )}
                     </div>
 
                     {/* SETTINGS MODAL */}
                     {showSettings && (
-                        <div className="fixed inset-0 bg-black/90 z-50 overflow-y-auto">
-                            <div className="min-h-screen p-6 flex flex-col">
-                                <div className="flex justify-between items-center mb-6">
+                        <div className="fixed inset-0 bg-slate-900/95 z-50 overflow-y-auto font-sans">
+                            <div className="p-6">
+                                <div className="flex justify-between items-center mb-8">
                                     <h2 className="text-2xl font-bold text-white">{t.settings}</h2>
-                                    <button onClick={() => setShowSettings(false)} className="text-slate-400 text-2xl"><i className="fa-solid fa-xmark"></i></button>
+                                    <button onClick={() => setShowSettings(false)} className="text-slate-400 text-3xl">&times;</button>
                                 </div>
-                                
-                                <div className="space-y-6 max-w-lg mx-auto w-full pb-10">
+                                <div className="space-y-6 max-w-md mx-auto">
                                     {/* Names */}
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-blue-400 text-xs font-bold uppercase block mb-1">{t.p1Def}</label>
-                                            <input value={settings.p1Name} onChange={e => setSettings({...settings, p1Name: e.target.value})} className="w-full bg-slate-800 p-3 rounded-xl border border-blue-900/50 text-white font-bold" placeholder="Name" />
-                                        </div>
-                                        <div>
-                                            <label className="text-emerald-400 text-xs font-bold uppercase block mb-1">{t.p2Def}</label>
-                                            <input value={settings.p2Name} onChange={e => setSettings({...settings, p2Name: e.target.value})} className="w-full bg-slate-800 p-3 rounded-xl border border-emerald-900/50 text-white font-bold" placeholder="Name" />
-                                        </div>
+                                        <input value={settings.p1Name} onChange={e => setSettings({...settings, p1Name: e.target.value})} className="w-full bg-slate-800 p-4 rounded-xl border border-blue-900 text-white font-bold" placeholder="Spieler 1" />
+                                        <input value={settings.p2Name} onChange={e => setSettings({...settings, p2Name: e.target.value})} className="w-full bg-slate-800 p-4 rounded-xl border border-emerald-900 text-white font-bold" placeholder="Spieler 2" />
                                     </div>
-
-                                    {/* Service Selection */}
+                                    {/* Server */}
                                     <div>
                                         <label className="text-slate-500 text-xs font-bold uppercase block mb-2">{t.whoServes}</label>
                                         <div className="grid grid-cols-2 gap-2">
-                                            <button onClick={() => { setSettings({...settings, initialServer: 'p1'}); setState(s => ({...s, server: 'p1'})) }} className={`p-3 rounded-xl font-bold border ${settings.initialServer === 'p1' ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>{settings.p1Name || "P1"}</button>
-                                            <button onClick={() => { setSettings({...settings, initialServer: 'p2'}); setState(s => ({...s, server: 'p2'})) }} className={`p-3 rounded-xl font-bold border ${settings.initialServer === 'p2' ? 'bg-emerald-600 border-emerald-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>{settings.p2Name || "P2"}</button>
+                                            <button onClick={() => { setSettings({...settings, initialServer: 'p1'}); setState(s => ({...s, server: 'p1'})) }} className={`p-3 rounded-xl font-bold ${settings.initialServer === 'p1' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{settings.p1Name || "P1"}</button>
+                                            <button onClick={() => { setSettings({...settings, initialServer: 'p2'}); setState(s => ({...s, server: 'p2'})) }} className={`p-3 rounded-xl font-bold ${settings.initialServer === 'p2' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-500'}`}>{settings.p2Name || "P2"}</button>
+                                        </div>
+                                    </div>
+                                    <hr className="border-slate-800"/>
+                                    {/* Rules */}
+                                    <div className="bg-slate-800 p-4 rounded-xl space-y-4">
+                                        <div className="flex justify-between items-center">
+                                            <span>{t.gamesSet}</span>
+                                            <div className="flex bg-slate-900 rounded-lg p-1">
+                                                {[4,6].map(g => <button key={g} onClick={() => setSettings({...settings, gamesPerSet: g})} className={`px-4 py-1 rounded ${settings.gamesPerSet === g ? 'bg-slate-600 text-white' : 'text-slate-500'}`}>{g}</button>)}
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span>{t.matchType}</span>
+                                            <div className="flex bg-slate-900 rounded-lg p-1">
+                                                {[2,3].map(s => <button key={s} onClick={() => setSettings({...settings, setsToWin: s})} className={`px-4 py-1 rounded ${settings.setsToWin === s ? 'bg-slate-600 text-white' : 'text-slate-500'}`}>{s === 2 ? 'Bo3' : 'Bo5'}</button>)}
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span>No-Ad</span>
+                                            <button onClick={() => setSettings({...settings, noAd: !settings.noAd})} className={`w-12 h-6 rounded-full relative ${settings.noAd ? 'bg-green-500' : 'bg-slate-600'}`}><div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.noAd ? 'left-7' : 'left-1'}`}></div></button>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span>{t.lastSet}</span>
+                                            <button onClick={() => setSettings({...settings, lastSetTieBreak: !settings.lastSetTieBreak})} className="text-sm font-bold bg-slate-900 px-3 py-1 rounded text-blue-400">{settings.lastSetTieBreak ? t.tb : t.advSet}</button>
                                         </div>
                                     </div>
 
-                                    <hr className="border-slate-800" />
-
-                                    {/* Match Rules */}
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="text-slate-500 text-xs font-bold uppercase block mb-2">{t.matchType}</label>
-                                            <div className="flex gap-2">
-                                                <button onClick={() => setSettings({...settings, setsToWin: 2})} className={`flex-1 p-2 rounded-lg font-bold text-sm ${settings.setsToWin === 2 ? 'bg-slate-200 text-black' : 'bg-slate-800 text-slate-500'}`}>Bo3</button>
-                                                <button onClick={() => setSettings({...settings, setsToWin: 3})} className={`flex-1 p-2 rounded-lg font-bold text-sm ${settings.setsToWin === 3 ? 'bg-slate-200 text-black' : 'bg-slate-800 text-slate-500'}`}>Bo5</button>
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="text-slate-500 text-xs font-bold uppercase block mb-2">{t.gamesSet}</label>
-                                            <div className="flex gap-2">
-                                                <button onClick={() => setSettings({...settings, gamesPerSet: 4})} className={`flex-1 p-2 rounded-lg font-bold text-sm ${settings.gamesPerSet === 4 ? 'bg-slate-200 text-black' : 'bg-slate-800 text-slate-500'}`}>4</button>
-                                                <button onClick={() => setSettings({...settings, gamesPerSet: 6})} className={`flex-1 p-2 rounded-lg font-bold text-sm ${settings.gamesPerSet === 6 ? 'bg-slate-200 text-black' : 'bg-slate-800 text-slate-500'}`}>6</button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Advanced Rules */}
-                                    <div className="space-y-3">
-                                        <div className="flex justify-between items-center bg-slate-800 p-3 rounded-xl">
-                                            <span className="text-sm font-bold text-white">{t.noAd}</span>
-                                            <button onClick={() => setSettings({...settings, noAd: !settings.noAd})} className={`w-10 h-6 rounded-full relative transition-colors ${settings.noAd ? 'bg-green-500' : 'bg-slate-600'}`}>
-                                                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.noAd ? 'left-5' : 'left-1'}`}></div>
-                                            </button>
-                                        </div>
-                                        
-                                        <div className="bg-slate-800 p-3 rounded-xl">
-                                            <label className="text-xs text-slate-500 font-bold uppercase mb-2 block">{t.lastSet}</label>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                 <button onClick={() => setSettings({...settings, lastSetTieBreak: true})} className={`p-2 rounded-lg text-xs font-bold ${settings.lastSetTieBreak ? 'bg-slate-600 text-white' : 'bg-slate-900 text-slate-500'}`}>{t.tb} (6-6)</button>
-                                                 <button onClick={() => setSettings({...settings, lastSetTieBreak: false})} className={`p-2 rounded-lg text-xs font-bold ${!settings.lastSetTieBreak ? 'bg-slate-600 text-white' : 'bg-slate-900 text-slate-500'}`}>{t.advSet}</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <select value={lang} onChange={e => setLang(e.target.value)} className="w-full bg-slate-800 p-3 rounded-xl border border-slate-700 text-white font-bold uppercase text-xs mt-4">
-                                        <option value="de">Deutsch</option><option value="en">English</option><option value="fr">Français</option>
-                                    </select>
-
-                                    <button onClick={() => setShowSettings(false)} className="w-full py-4 bg-blue-600 rounded-xl font-black uppercase tracking-widest mt-8">OK</button>
-                                    
-                                    <button onClick={reset} className="w-full py-4 text-red-500 font-bold text-xs uppercase tracking-widest mt-2">{t.reset}</button>
+                                    <button onClick={() => setShowSettings(false)} className="w-full py-4 bg-blue-600 rounded-xl font-black uppercase text-xl">OK</button>
+                                    <button onClick={reset} className="w-full py-4 text-red-500 font-bold uppercase">{t.reset}</button>
                                 </div>
                             </div>
                         </div>
