@@ -3,21 +3,52 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-    <title>Tennis Big Score</title>
+    
+    <title>Tennis Score Tracker | Kostenloser Online Punktezähler</title>
+    <meta name="description" content="Der einfache Tennis Score Tracker für dein Smartphone. Zähle Punkte, Spiele und Sätze live auf dem Platz. Mit Match-Tie-Break (10 Punkte) und No-Ad Regel." />
+    <meta name="keywords" content="Tennis, Scoreboard, Punktezähler, App, Zähltafel, Online, Kostenlos, Match Tie Break, Tennis Score Keeper" />
+    <meta name="author" content="Thomas" />
+    <meta name="robots" content="index, follow" />
+    
+    <meta property="og:title" content="Tennis Score Tracker" />
+    <meta property="og:description" content="Live Tennis Punktezähler für den Platz. Kostenlos und ohne Installation." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://thomas2307.github.io/Tennis_score_tracker/" />
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Tennis Score Tracker",
+      "url": "https://thomas2307.github.io/Tennis_score_tracker/",
+      "description": "Ein digitaler Tennis Punktezähler für Amateure und Profis.",
+      "applicationCategory": "SportsApplication",
+      "operatingSystem": "Any",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR"
+      }
+    }
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Teko:wght@300;500;700&display=swap');
         body { background-color: #000; overscroll-behavior-y: contain; user-select: none; font-family: 'Teko', sans-serif; }
-        /* Spezielle Schrift für Zahlen, damit sie schmal und hoch sind (gut fürs Handy) */
         .big-num { font-size: clamp(3rem, 12vw, 5rem); line-height: 1; font-weight: 500; }
         .mega-num { font-size: clamp(5rem, 20vw, 8rem); line-height: 0.9; font-weight: 700; }
         .label-text { font-size: 0.8rem; letter-spacing: 0.1em; opacity: 0.6; text-transform: uppercase; font-family: sans-serif; font-weight: bold;}
+        
+        /* Platzhalter für Werbung */
+        .ad-container { width: 100%; height: 60px; background: #1e293b; display: flex; items-center; justify-content: center; color: #475569; font-size: 0.75rem; font-family: sans-serif; text-transform: uppercase; letter-spacing: 1px; }
     </style>
-</head>
+    
+    </head>
 <body>
     <div id="root"></div>
 
@@ -25,9 +56,9 @@
         const { useState, useEffect } = React;
 
         const TRANSLATIONS = {
-            de: { settings: "Einstellungen", matchType: "Match-Typ", gamesSet: "Spiele/Satz", noAd: "No-Ad", lang: "Sprache", reset: "Neustart", undo: "Zurück", p1Def: "Spieler 1", p2Def: "Spieler 2", adv: "AD", tiebreak: "TIE-BREAK", whoServes: "Aufschlag Start", lastSet: "Letzter Satz", tb: "Tie-Break", advSet: "Ausspielen" },
-            en: { settings: "Settings", matchType: "Match Type", gamesSet: "Games/Set", noAd: "No-Ad", lang: "Language", reset: "Reset", undo: "Undo", p1Def: "Player 1", p2Def: "Player 2", adv: "AD", tiebreak: "TIE-BREAK", whoServes: "First Server", lastSet: "Final Set", tb: "Tie-Break", advSet: "Advantage" },
-            fr: { settings: "Réglages", matchType: "Type", gamesSet: "Jeux/Set", noAd: "No-Ad", lang: "Langue", reset: "Reset", undo: "Annuler", p1Def: "Joueur 1", p2Def: "Joueur 2", adv: "AV", tiebreak: "TIE-BREAK", whoServes: "Service", lastSet: "Dernier Set", tb: "Tie-Break", advSet: "Avantage" }
+            de: { settings: "Einstellungen", matchType: "Match-Typ", gamesSet: "Spiele/Satz", noAd: "No-Ad", lang: "Sprache", reset: "Neustart", undo: "Zurück", p1Def: "Spieler 1", p2Def: "Spieler 2", adv: "AD", tiebreak: "TIE-BREAK", matchTb: "MATCH TIE-BREAK (10)", whoServes: "Aufschlag Start", lastSet: "Letzter Satz", tb: "Tie-Break", advSet: "Ausspielen" },
+            en: { settings: "Settings", matchType: "Match Type", gamesSet: "Games/Set", noAd: "No-Ad", lang: "Language", reset: "Reset", undo: "Undo", p1Def: "Player 1", p2Def: "Player 2", adv: "AD", tiebreak: "TIE-BREAK", matchTb: "MATCH TIE-BREAK (10)", whoServes: "First Server", lastSet: "Final Set", tb: "Tie-Break", advSet: "Advantage" },
+            fr: { settings: "Réglages", matchType: "Type", gamesSet: "Jeux/Set", noAd: "No-Ad", lang: "Langue", reset: "Reset", undo: "Annuler", p1Def: "Joueur 1", p2Def: "Joueur 2", adv: "AV", tiebreak: "TIE-BREAK", matchTb: "SUPER TIE-BREAK (10)", whoServes: "Service", lastSet: "Dernier Set", tb: "Tie-Break", advSet: "Avantage" }
         };
 
         function App() {
@@ -59,7 +90,6 @@
             const handlePoint = (w) => {
                 if (state.over) return;
                 
-                // MEMORY FIX: Wir speichern NUR die reinen Daten, nicht die History selbst!
                 const snapshot = {
                     p1: {...state.p1}, p2: {...state.p2}, 
                     fSets: [...state.fSets], isTB: state.isTB, 
@@ -67,17 +97,20 @@
                 };
                 
                 let n = JSON.parse(JSON.stringify(state));
-                // Wichtig: History Array wird im State belassen, aber nicht in den Snapshot gepackt
                 n.history = [...state.history, snapshot];
-                if (n.history.length > 20) n.history.shift(); // Limit history size
+                if (n.history.length > 20) n.history.shift(); 
 
                 const p = w === 'p1' ? n.p1 : n.p2; const o = w === 'p1' ? n.p2 : n.p1;
                 p.pts++;
 
                 let gameWon = false;
                 if (n.isTB) {
-                    if (p.pts >= 7 && (p.pts - o.pts) >= 2) gameWon = true;
-                    // TB Service Rotation: After 1st point, then every 2 points
+                    // LOGIK UPDATE: Match Tie Break bis 10, sonst 7
+                    const isDecider = (n.p1.sts + n.p2.sts) === (settings.setsToWin * 2 - 2);
+                    const targetPoints = (isDecider && settings.lastSetTieBreak) ? 10 : 7;
+                    
+                    if (p.pts >= targetPoints && (p.pts - o.pts) >= 2) gameWon = true;
+                    
                     const total = p.pts + o.pts;
                     if (total % 2 === 1) n.server = n.server === 'p1' ? 'p2' : 'p1';
                 } else {
@@ -88,16 +121,14 @@
                 if (gameWon) {
                     p.pts = 0; o.pts = 0; p.gms++;
                     if (!n.isTB) n.server = n.server === 'p1' ? 'p2' : 'p1';
-                    else n.server = n.server === 'p1' ? 'p2' : 'p1'; // Simplified rotation after set/tb
+                    else n.server = n.server === 'p1' ? 'p2' : 'p1'; 
                     
                     n.isTB = false;
                     const limit = settings.gamesPerSet;
                     
-                    // Set Logic
                     let setWon = false;
                     if (p.gms >= limit && (p.gms - o.gms) >= 2) setWon = true;
                     
-                    // Advantage Set Check (Last Set)
                     const isDecider = (n.p1.sts + n.p2.sts) === (settings.setsToWin * 2 - 2);
                     if (p.gms === limit + 1 && o.gms === limit - 1 && isDecider && !settings.lastSetTieBreak) setWon = false;
 
@@ -115,7 +146,6 @@
             const undo = () => {
                 if (state.history.length > 0) {
                     const prev = state.history[state.history.length - 1];
-                    // Wir stellen den State wieder her, behalten aber das History Array (minus den letzten Eintrag)
                     const newHistory = state.history.slice(0, -1);
                     setState({...prev, history: newHistory});
                 }
@@ -126,13 +156,11 @@
             return (
                 <div className="flex flex-col h-screen w-full bg-black text-white overflow-hidden">
                     
-                    {/* HEADER (Minimal) */}
+                    {/* Header */}
                     <div className="h-12 flex justify-between items-center px-4 bg-slate-900 border-b border-slate-800 shrink-0 z-20">
                         <button onClick={undo} className="text-slate-400 font-bold uppercase text-sm tracking-wider flex items-center gap-2 active:scale-95">
                             <i className="fa-solid fa-rotate-left"></i> {t.undo}
                         </button>
-                        
-                        {/* Finished Sets Display */}
                         <div className="flex gap-2">
                              {state.fSets.map((s, i) => (
                                 <span key={i} className="text-slate-500 font-mono text-sm bg-slate-800 px-1 rounded">
@@ -140,95 +168,64 @@
                                 </span>
                             ))}
                         </div>
-
                         <button onClick={() => setShowSettings(true)} className="text-slate-400 text-lg active:scale-95">
                             <i className="fa-solid fa-gear"></i>
                         </button>
                     </div>
 
-                    {/* MAIN SCORE AREA */}
+                    {/* Main Area */}
                     <div className="flex-1 flex w-full relative">
-                        {/* Divider Line */}
                         <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-slate-800 z-10 transform -translate-x-1/2"></div>
 
-                        {/* PLAYER 1 (Left/Blue) */}
+                        {/* P1 */}
                         <div className="flex-1 flex flex-col bg-slate-900 relative">
-                            {/* Service Indicator P1 */}
                             <div className={`absolute top-2 left-2 right-2 h-1 ${state.server === 'p1' && !state.over ? 'bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.8)]' : 'bg-transparent'} rounded-full transition-all`}></div>
-
                             <div className="flex-1 flex flex-col justify-start pt-6 items-center border-r border-slate-800/50">
-                                {/* SETS */}
-                                <div className="flex flex-col items-center mb-2">
-                                    <span className="label-text text-blue-500">SETS</span>
-                                    <span className="big-num text-blue-500">{state.p1.sts}</span>
-                                </div>
-                                {/* GAMES */}
-                                <div className="flex flex-col items-center mb-2">
-                                    <span className="label-text text-blue-400">GAMES</span>
-                                    <span className="big-num text-blue-400">{state.p1.gms}</span>
-                                </div>
-                                {/* POINTS */}
-                                <div className="flex flex-col items-center flex-1 justify-center">
-                                    <span className="label-text text-white">POINTS</span>
-                                    <span className="mega-num text-white tracking-tighter">{getPointStr(state.p1.pts, state.p2.pts)}</span>
-                                </div>
+                                <div className="flex flex-col items-center mb-2"><span className="label-text text-blue-500">SETS</span><span className="big-num text-blue-500">{state.p1.sts}</span></div>
+                                <div className="flex flex-col items-center mb-2"><span className="label-text text-blue-400">GAMES</span><span className="big-num text-blue-400">{state.p1.gms}</span></div>
+                                <div className="flex flex-col items-center flex-1 justify-center"><span className="label-text text-white">POINTS</span><span className="mega-num text-white tracking-tighter">{getPointStr(state.p1.pts, state.p2.pts)}</span></div>
                             </div>
-                            
-                            {/* BIG BUTTON P1 */}
                             <button onClick={() => handlePoint('p1')} className="h-32 bg-blue-700 active:bg-blue-600 w-full flex flex-col items-center justify-center border-t border-blue-500 shadow-[inset_0_0_30px_rgba(0,0,0,0.3)] transition-all z-10">
                                 <span className="text-2xl font-bold uppercase tracking-wider">{settings.p1Name || "P1"}</span>
                                 <span className="text-xs opacity-75 font-bold">+ POINT</span>
                             </button>
                         </div>
 
-                        {/* PLAYER 2 (Right/Green) */}
+                        {/* P2 */}
                         <div className="flex-1 flex flex-col bg-slate-950 relative">
-                             {/* Service Indicator P2 */}
                              <div className={`absolute top-2 left-2 right-2 h-1 ${state.server === 'p2' && !state.over ? 'bg-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.8)]' : 'bg-transparent'} rounded-full transition-all`}></div>
-
                             <div className="flex-1 flex flex-col justify-start pt-6 items-center">
-                                {/* SETS */}
-                                <div className="flex flex-col items-center mb-2">
-                                    <span className="label-text text-emerald-600">SETS</span>
-                                    <span className="big-num text-emerald-600">{state.p2.sts}</span>
-                                </div>
-                                {/* GAMES */}
-                                <div className="flex flex-col items-center mb-2">
-                                    <span className="label-text text-emerald-500">GAMES</span>
-                                    <span className="big-num text-emerald-500">{state.p2.gms}</span>
-                                </div>
-                                {/* POINTS */}
-                                <div className="flex flex-col items-center flex-1 justify-center">
-                                    <span className="label-text text-white">POINTS</span>
-                                    <span className="mega-num text-white tracking-tighter">{getPointStr(state.p2.pts, state.p1.pts)}</span>
-                                </div>
+                                <div className="flex flex-col items-center mb-2"><span className="label-text text-emerald-600">SETS</span><span className="big-num text-emerald-600">{state.p2.sts}</span></div>
+                                <div className="flex flex-col items-center mb-2"><span className="label-text text-emerald-500">GAMES</span><span className="big-num text-emerald-500">{state.p2.gms}</span></div>
+                                <div className="flex flex-col items-center flex-1 justify-center"><span className="label-text text-white">POINTS</span><span className="mega-num text-white tracking-tighter">{getPointStr(state.p2.pts, state.p1.pts)}</span></div>
                             </div>
-
-                             {/* BIG BUTTON P2 */}
                              <button onClick={() => handlePoint('p2')} className="h-32 bg-emerald-700 active:bg-emerald-600 w-full flex flex-col items-center justify-center border-t border-emerald-500 shadow-[inset_0_0_30px_rgba(0,0,0,0.3)] transition-all z-10">
                                 <span className="text-2xl font-bold uppercase tracking-wider">{settings.p2Name || "P2"}</span>
                                 <span className="text-xs opacity-75 font-bold">+ POINT</span>
                             </button>
                         </div>
 
-                        {/* OVERLAYS */}
+                        {/* Overlays */}
                         {state.isTB && (
                             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-yellow-500 text-black px-6 py-2 rounded-full font-black text-xl shadow-xl z-30 animate-pulse whitespace-nowrap border-4 border-black">
-                                {t.tiebreak}
+                                {(state.p1.sts + state.p2.sts) === (settings.setsToWin * 2 - 2) && settings.lastSetTieBreak ? t.matchTb : t.tiebreak}
                             </div>
                         )}
                         {state.over && (
                              <div className="absolute inset-0 bg-black/90 z-50 flex flex-col items-center justify-center p-6 text-center backdrop-blur-md">
                                 <h1 className="text-5xl font-black text-white mb-4 uppercase">Match Over</h1>
-                                <div className="text-3xl font-bold mb-10 text-slate-300 font-mono">
-                                    {state.p1.sts > state.p2.sts ? (settings.p1Name || "P1") : (settings.p2Name || "P2")} Wins!
-                                </div>
+                                <div className="text-3xl font-bold mb-10 text-slate-300 font-mono">{state.p1.sts > state.p2.sts ? (settings.p1Name || "P1") : (settings.p2Name || "P2")} Wins!</div>
                                 <button onClick={reset} className="bg-white text-black px-10 py-4 rounded-full font-bold uppercase text-xl shadow-lg hover:scale-105 transition-transform">{t.reset}</button>
                             </div>
                         )}
                     </div>
+                    
+                    {/* AD PLACEHOLDER (Werbung) */}
+                    <div className="ad-container">
+                        <span className="opacity-30">Anzeige</span>
+                    </div>
 
-                    {/* SETTINGS MODAL */}
+                    {/* Settings Modal */}
                     {showSettings && (
                         <div className="fixed inset-0 bg-slate-900/95 z-50 overflow-y-auto font-sans">
                             <div className="p-6">
@@ -237,12 +234,10 @@
                                     <button onClick={() => setShowSettings(false)} className="text-slate-400 text-3xl">&times;</button>
                                 </div>
                                 <div className="space-y-6 max-w-md mx-auto">
-                                    {/* Names */}
                                     <div className="grid grid-cols-2 gap-4">
                                         <input value={settings.p1Name} onChange={e => setSettings({...settings, p1Name: e.target.value})} className="w-full bg-slate-800 p-4 rounded-xl border border-blue-900 text-white font-bold" placeholder="Spieler 1" />
                                         <input value={settings.p2Name} onChange={e => setSettings({...settings, p2Name: e.target.value})} className="w-full bg-slate-800 p-4 rounded-xl border border-emerald-900 text-white font-bold" placeholder="Spieler 2" />
                                     </div>
-                                    {/* Server */}
                                     <div>
                                         <label className="text-slate-500 text-xs font-bold uppercase block mb-2">{t.whoServes}</label>
                                         <div className="grid grid-cols-2 gap-2">
@@ -251,7 +246,6 @@
                                         </div>
                                     </div>
                                     <hr className="border-slate-800"/>
-                                    {/* Rules */}
                                     <div className="bg-slate-800 p-4 rounded-xl space-y-4">
                                         <div className="flex justify-between items-center">
                                             <span>{t.gamesSet}</span>
@@ -274,7 +268,6 @@
                                             <button onClick={() => setSettings({...settings, lastSetTieBreak: !settings.lastSetTieBreak})} className="text-sm font-bold bg-slate-900 px-3 py-1 rounded text-blue-400">{settings.lastSetTieBreak ? t.tb : t.advSet}</button>
                                         </div>
                                     </div>
-
                                     <button onClick={() => setShowSettings(false)} className="w-full py-4 bg-blue-600 rounded-xl font-black uppercase text-xl">OK</button>
                                     <button onClick={reset} className="w-full py-4 text-red-500 font-bold uppercase">{t.reset}</button>
                                 </div>
