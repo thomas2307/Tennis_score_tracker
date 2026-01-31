@@ -3,203 +3,144 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-    <title>Tennis Score Pro</title>
+    <title>Tennis Pro Score</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide-react@0.321.0/dist/umd/lucide-react.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { overscroll-behavior-y: contain; user-select: none; -webkit-tap-highlight-color: transparent; background-color: #0f172a; color: white; font-family: sans-serif; }
-        .modal-active { overflow: hidden; }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        body { background-color: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; overscroll-behavior-y: contain; user-select: none; }
+        .font-digital { font-family: 'Orbitron', sans-serif; }
+        .btn-shadow { shadow-[0_4px_0_rgb(30,41,59)] active:shadow-none active:translate-y-1 transition-all; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState } = React;
 
         const TRANSLATIONS = {
-            de: { settings: "Einstellungen", matchType: "Match-Typ", gamesSet: "Spiele pro Satz", noAd: "No-Ad (Entscheidungspunkt)", lang: "Sprache", newMatch: "Neues Match", undo: "Zurück", p1: "Spieler 1", p2: "Spieler 2", adv: "Vant.", tiebreak: "TIE-BREAK" },
-            en: { settings: "Settings", matchType: "Match Type", gamesSet: "Games per Set", noAd: "No-Ad Scoring", lang: "Language", newMatch: "New Match", undo: "Undo", p1: "Player 1", p2: "Player 2", adv: "Adv.", tiebreak: "TIE-BREAK" },
-            fr: { settings: "Paramètres", matchType: "Type de Match", gamesSet: "Jeux par Set", noAd: "No-Ad", lang: "Langue", newMatch: "Nouveau Match", undo: "Annuler", p1: "Joueur 1", p2: "Joueur 2", adv: "Av.", tiebreak: "TIE-BREAK" },
-            es: { settings: "Ajustes", matchType: "Tipo de Partido", gamesSet: "Juegos por Set", noAd: "No-Ad", lang: "Idioma", newMatch: "Nuevo Partido", undo: "Deshacer", p1: "Jugador 1", p2: "Jugador 2", adv: "Vent.", tiebreak: "TIE-BREAK" },
-            it: { settings: "Impostazioni", matchType: "Tipo di Match", gamesSet: "Giochi per Set", noAd: "No-Ad", lang: "Lingua", newMatch: "Nuovo Match", undo: "Indietro", p1: "Giocatore 1", p2: "Giocatore 2", adv: "Vant.", tiebreak: "TIE-BREAK" }
+            de: { settings: "Einstellungen", matchType: "Match-Typ", gamesSet: "Spiele / Satz", noAd: "No-Ad", lang: "Sprache", newMatch: "Neues Match", undo: "Zurück", p1: "Spieler 1", p2: "Spieler 2", adv: "VANT", tiebreak: "TIE-BREAK", reset: "Match Reset" },
+            en: { settings: "Settings", matchType: "Match Type", gamesSet: "Games / Set", noAd: "No-Ad", lang: "Language", newMatch: "New Match", undo: "Undo", p1: "Player 1", p2: "Player 2", adv: "ADV", tiebreak: "TIE-BREAK", reset: "Reset Match" },
+            fr: { settings: "Paramètres", matchType: "Type", gamesSet: "Jeux / Set", noAd: "No-Ad", lang: "Langue", newMatch: "Nouveau Match", undo: "Annuler", p1: "Joueur 1", p2: "Joueur 2", adv: "AV", tiebreak: "TIE-BREAK", reset: "Reset" }
         };
 
         function App() {
             const [lang, setLang] = useState('de');
-            const t = TRANSLATIONS[lang];
-            
-            // Einstellungen
-            const [settings, setSettings] = useState({
-                setsToWin: 2,
-                gamesPerSet: 6,
-                noAd: false
-            });
-
             const [showSettings, setShowSettings] = useState(false);
-            
-            const [state, setState] = useState({
-                p1: { points: 0, games: 0, sets: 0 },
-                p2: { points: 0, games: 0, sets: 0 },
-                finishedSets: [],
-                isTieBreak: false,
-                matchOver: false,
-                history: []
-            });
+            const [settings, setSettings] = useState({ setsToWin: 2, gamesPerSet: 6, noAd: false, p1Name: "P1", p2Name: "P2" });
+            const [state, setState] = useState({ p1: { pts: 0, gms: 0, sts: 0 }, p2: { pts: 0, gms: 0, sts: 0 }, fSets: [], isTB: false, over: false, history: [] });
 
-            const getPointLabel = (pts, oppPts) => {
-                if (state.isTieBreak) return pts;
-                if (settings.noAd) {
-                    const labels = ['0', '15', '30', '40'];
-                    return labels[pts] || '40';
+            const t = TRANSLATIONS[lang] || TRANSLATIONS.de;
+
+            const handlePoint = (w) => {
+                if (state.over) return;
+                const snap = JSON.stringify({p1: state.p1, p2: state.p2, fs: state.fSets, tb: state.isTB, ov: state.over});
+                let n = JSON.parse(JSON.stringify(state));
+                n.history.push(snap); if (n.history.length > 5) n.history.shift();
+
+                const p = w === 'p1' ? n.p1 : n.p2; const o = w === 'p1' ? n.p2 : n.p1;
+                p.pts++;
+                const won = n.isTB ? (p.pts >= 7 && p.pts-o.pts >= 2) : (settings.noAd ? p.pts >= 4 : (p.pts >= 4 && p.pts-o.pts >= 2));
+
+                if (won) {
+                    p.pts = 0; o.pts = 0; p.gms++; n.isTB = false;
+                    const setWon = (p.gms >= settings.gamesPerSet && p.gms-o.gms >= 2) || p.gms > settings.gamesPerSet;
+                    if (setWon) {
+                        p.sts++; n.fSets.push({p1: n.p1.gms, p2: n.p2.gms});
+                        n.p1.gms = 0; n.p2.gms = 0;
+                        if (p.sts >= settings.setsToWin) n.over = true;
+                    } else if (p.gms === settings.gamesPerSet && o.gms === settings.gamesPerSet) n.isTB = true;
                 }
-                if (pts <= 3 && oppPts <= 3) return ['0', '15', '30', '40'][pts] || '40';
-                if (pts > oppPts) return t.adv;
-                return '40';
+                setState(n);
             };
 
-            const handlePoint = (winner) => {
-                if (state.matchOver) return;
-                
-                // History fix: Wir speichern nur die nötigsten Daten als String, um Memory-Leaks zu verhindern
-                const historySnapshot = JSON.stringify({p1: state.p1, p2: state.p2, fs: state.finishedSets, tb: state.isTieBreak, mo: state.matchOver});
-                
-                let next = JSON.parse(JSON.stringify(state));
-                next.history.push(historySnapshot);
-                if (next.history.length > 10) next.history.shift(); // Max 10 Schritte zurück
-
-                const p = winner === 'p1' ? next.p1 : next.p2;
-                const o = winner === 'p1' ? next.p2 : next.p1;
-
-                p.points++;
-
-                // Game Logic
-                const isGameWon = next.isTieBreak 
-                    ? (p.points >= 7 && p.points - o.points >= 2)
-                    : (settings.noAd ? p.points >= 4 : (p.points >= 4 && p.points - o.points >= 2));
-
-                if (isGameWon) {
-                    p.points = 0; o.points = 0;
-                    p.games++;
-                    next.isTieBreak = false;
-
-                    // Set Logic
-                    const isSetWon = (p.games >= settings.gamesPerSet && p.games - o.games >= 2) || p.games > settings.gamesPerSet;
-                    
-                    if (isSetWon) {
-                        p.sets++;
-                        next.finishedSets.push({p1: next.p1.games, p2: next.p2.games});
-                        next.p1.games = 0; next.p2.games = 0;
-                        if (p.sets >= settings.setsToWin) next.matchOver = true;
-                    } else if (p.games === settings.gamesPerSet && o.games === settings.gamesPerSet) {
-                        next.isTieBreak = true;
-                    }
-                }
-                setState(next);
-            };
-
-            const undo = () => {
-                if (state.history.length === 0) return;
-                const last = JSON.parse(state.history.pop());
-                setState({ ...state, p1: last.p1, p2: last.p2, finishedSets: last.fs, isTieBreak: last.tb, matchOver: last.mo });
-            };
+            const resetMatch = () => { if(confirm(t.reset + "?")) location.reload(); };
 
             return (
-                <div className="flex flex-col h-screen max-w-md mx-auto bg-slate-950 shadow-2xl overflow-hidden">
-                    {/* Header mit Settings Button */}
-                    <div className="p-4 flex justify-between items-center border-b border-slate-800">
-                        <span className="font-black text-blue-500 tracking-tighter">TENNIS TRACKER</span>
-                        <button onClick={() => setShowSettings(true)} className="p-2 bg-slate-800 rounded-full">
-                           <i data-lucide="settings" className="w-5 h-5 text-slate-300"></i>
+                <div className="flex flex-col h-screen max-w-lg mx-auto bg-slate-950 p-4">
+                    {/* Header */}
+                    <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse"></div>
+                            <span className="text-xl font-black tracking-tighter text-slate-200">LIVE SCORE</span>
+                        </div>
+                        <button onClick={() => setShowSettings(true)} className="w-12 h-12 flex items-center justify-center bg-slate-800 rounded-xl border border-slate-700 shadow-lg">
+                            <i className="fa-solid fa-gear text-2xl text-blue-400"></i>
                         </button>
                     </div>
 
-                    {/* Scoreboard */}
-                    <div className="p-6 bg-slate-900 border-b border-slate-800">
-                        <div className="space-y-8">
-                            {['p1', 'p2'].map(pKey => (
-                                <div key={pKey} className="flex items-center justify-between">
-                                    <div>
-                                        <div className="text-slate-400 text-xs font-bold uppercase">{t[pKey]}</div>
-                                        <div className="flex gap-2 mt-1">
-                                            {state.finishedSets.map((s, i) => (
-                                                <span key={i} className="bg-slate-800 px-2 py-1 rounded text-sm text-slate-500">{s[pKey]}</span>
-                                            ))}
-                                            <span className="text-2xl font-bold text-blue-400">{state[pKey].games}</span>
-                                        </div>
-                                    </div>
-                                    <div className="text-6xl font-black text-emerald-400 font-mono">
-                                        {getPointLabel(state[pKey].points, pKey === 'p1' ? state.p2.points : state.p1.points)}
+                    {/* Main Scoreboard */}
+                    <div className="bg-slate-900 rounded-3xl p-6 border border-slate-800 shadow-2xl mb-4">
+                        {['p1', 'p2'].map((k, i) => (
+                            <div key={k} className={`flex items-center justify-between ${i === 0 ? 'mb-8 border-b border-slate-800 pb-8' : ''}`}>
+                                <div className="flex-1">
+                                    <h2 className="text-xl font-bold text-slate-400 truncate mb-2 uppercase">{k === 'p1' ? settings.p1Name : settings.p2Name}</h2>
+                                    <div className="flex gap-3">
+                                        {state.fSets.map((s, idx) => (
+                                            <span key={idx} className="text-2xl font-digital text-slate-600">{s[k]}</span>
+                                        ))}
+                                        <span className="text-5xl font-digital font-bold text-blue-500">{state[k].gms}</span>
                                     </div>
                                 </div>
-                            ))}
-                        </div>
+                                <div className="text-7xl font-digital font-black text-emerald-400 min-w-[120px] text-right">
+                                    {state.isTB ? state[k].pts : (settings.noAd ? ['0','15','30','40'][state[k].pts] || '40' : (state[k].pts > 3 && state[k].pts > (k==='p1'?state.p2.pts:state.p1.pts) ? t.adv : ['0','15','30','40'][state[k].pts] || '40'))}
+                                </div>
+                            </div>
+                        ))}
                     </div>
 
-                    {/* Controls */}
-                    <div className="flex-1 p-4 flex flex-col gap-4">
-                        {!state.matchOver ? (
-                            <div className="flex-1 flex gap-4">
-                                <button onClick={() => handlePoint('p1')} className="flex-1 bg-blue-600 rounded-3xl text-4xl font-black shadow-[0_8px_0_rgb(29,78,216)] active:translate-y-1 active:shadow-none transition-all">P1</button>
-                                <button onClick={() => handlePoint('p2')} className="flex-1 bg-emerald-600 rounded-3xl text-4xl font-black shadow-[0_8px_0_rgb(5,150,105)] active:translate-y-1 active:shadow-none transition-all">P2</button>
-                            </div>
-                        ) : (
-                            <div className="flex-1 bg-yellow-500 rounded-3xl flex flex-col items-center justify-center text-slate-900">
-                                <h2 className="text-3xl font-black mb-4">{t.matchOver}</h2>
-                                <button onClick={() => location.reload()} className="bg-slate-900 text-white px-8 py-3 rounded-full font-bold uppercase">Reset</button>
-                            </div>
-                        )}
-                        <button onClick={undo} className="py-4 bg-slate-800 rounded-2xl font-bold text-slate-400 uppercase tracking-widest text-sm">
-                            {t.undo}
+                    {/* Point Action Buttons */}
+                    <div className="grid grid-cols-2 gap-4 h-32 mb-4">
+                        <button onClick={() => handlePoint('p1')} className="bg-blue-600 rounded-2xl text-3xl font-black shadow-[0_6px_0_rgb(29,78,216)] active:shadow-none active:translate-y-1 transition-all">P1</button>
+                        <button onClick={() => handlePoint('p2')} className="bg-emerald-600 rounded-2xl text-3xl font-black shadow-[0_6px_0_rgb(5,150,105)] active:shadow-none active:translate-y-1 transition-all">P2</button>
+                    </div>
+
+                    {/* Secondary Controls */}
+                    <div className="flex gap-4 mb-8">
+                        <button onClick={() => { if(state.history.length > 0) { const last = JSON.parse(state.history.pop()); setState({...state, p1:last.p1, p2:last.p2, fSets:last.fs, isTB:last.tb, over:last.ov}); }}} className="flex-1 py-4 bg-slate-800 rounded-2xl font-bold text-slate-400 uppercase tracking-widest text-sm border border-slate-700 italic">Undo</button>
+                    </div>
+
+                    {/* Danger Zone Reset */}
+                    <div className="mt-auto pt-4 border-t border-slate-900">
+                        <button onClick={resetMatch} className="w-full py-4 bg-red-950/30 text-red-500 rounded-2xl font-bold border border-red-900/50 hover:bg-red-900/20 transition-all uppercase tracking-widest text-xs">
+                            <i className="fa-solid fa-rotate-left mr-2"></i> {t.reset}
                         </button>
                     </div>
 
                     {/* Settings Modal */}
                     {showSettings && (
-                        <div className="fixed inset-0 bg-black/90 backdrop-blur-md flex items-center justify-center p-6 z-50">
-                            <div className="bg-slate-900 w-full rounded-3xl p-6 border border-slate-700">
-                                <h2 className="text-2xl font-bold mb-6 text-blue-400">{t.settings}</h2>
-                                
+                        <div className="fixed inset-0 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                            <div className="bg-slate-900 w-full max-w-sm rounded-[2rem] p-8 border border-slate-700 shadow-3xl">
+                                <div className="flex justify-between items-center mb-8">
+                                    <h2 className="text-2xl font-black text-blue-400">{t.settings}</h2>
+                                    <button onClick={() => setShowSettings(false)} className="text-slate-500 text-3xl">&times;</button>
+                                </div>
                                 <div className="space-y-6">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <input value={settings.p1Name} onChange={e => setSettings({...settings, p1Name: e.target.value})} className="bg-slate-800 p-3 rounded-xl border border-slate-700 text-white font-bold" placeholder="Name 1" />
+                                        <input value={settings.p2Name} onChange={e => setSettings({...settings, p2Name: e.target.value})} className="bg-slate-800 p-3 rounded-xl border border-slate-700 text-white font-bold" placeholder="Name 2" />
+                                    </div>
                                     <div>
-                                        <label className="text-xs font-bold text-slate-500 uppercase">{t.matchType}</label>
-                                        <div className="grid grid-cols-2 gap-2 mt-2">
-                                            <button onClick={() => setSettings({...settings, setsToWin: 2})} className={`p-3 rounded-xl border ${settings.setsToWin === 2 ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700'}`}>Best of 3</button>
-                                            <button onClick={() => setSettings({...settings, setsToWin: 3})} className={`p-3 rounded-xl border ${settings.setsToWin === 3 ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700'}`}>Best of 5</button>
+                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 block">{t.gamesSet}</label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {[4, 6].map(g => <button key={g} onClick={() => setSettings({...settings, gamesPerSet: g})} className={`p-3 rounded-xl font-bold border ${settings.gamesPerSet === g ? 'bg-blue-600 border-blue-400' : 'bg-slate-800 border-slate-700 text-slate-50'}`}>{g}</button>)}
                                         </div>
                                     </div>
-
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-500 uppercase">{t.gamesSet}</label>
-                                        <div className="grid grid-cols-2 gap-2 mt-2">
-                                            <button onClick={() => setSettings({...settings, gamesPerSet: 4})} className={`p-3 rounded-xl border ${settings.gamesPerSet === 4 ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700'}`}>4 Games</button>
-                                            <button onClick={() => setSettings({...settings, gamesPerSet: 6})} className={`p-3 rounded-xl border ${settings.gamesPerSet === 6 ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700'}`}>6 Games</button>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex justify-between items-center">
-                                        <span className="font-bold text-sm">{t.noAd}</span>
-                                        <button onClick={() => setSettings({...settings, noAd: !settings.noAd})} className={`w-12 h-6 rounded-full transition-colors ${settings.noAd ? 'bg-emerald-500' : 'bg-slate-700'} relative`}>
+                                    <div className="flex justify-between items-center bg-slate-800/50 p-4 rounded-2xl border border-slate-800">
+                                        <span className="font-bold text-sm">No-Ad Scoring</span>
+                                        <button onClick={() => setSettings({...settings, noAd: !settings.noAd})} className={`w-12 h-6 rounded-full ${settings.noAd ? 'bg-emerald-500' : 'bg-slate-600'} relative`}>
                                             <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${settings.noAd ? 'left-7' : 'left-1'}`}></div>
                                         </button>
                                     </div>
-
-                                    <div>
-                                        <label className="text-xs font-bold text-slate-500 uppercase">{t.lang}</label>
-                                        <select value={lang} onChange={(e) => setLang(e.target.value)} className="w-full mt-2 bg-slate-800 p-3 rounded-xl border border-slate-700 text-white">
-                                            <option value="de">Deutsch</option>
-                                            <option value="en">English</option>
-                                            <option value="fr">Français</option>
-                                            <option value="es">Español</option>
-                                            <option value="it">Italiano</option>
-                                        </select>
-                                    </div>
+                                    <select value={lang} onChange={e => setLang(e.target.value)} className="w-full bg-slate-800 p-4 rounded-xl border border-slate-700 font-bold uppercase text-xs tracking-widest">
+                                        <option value="de">Deutsch</option><option value="en">English</option><option value="fr">Français</option>
+                                    </select>
                                 </div>
-
-                                <button onClick={() => setShowSettings(false)} className="w-full mt-8 bg-blue-600 py-4 rounded-2xl font-bold uppercase">Fertig</button>
+                                <button onClick={() => setShowSettings(false)} className="w-full mt-10 bg-blue-600 py-4 rounded-2xl font-black shadow-lg">READY</button>
                             </div>
                         </div>
                     )}
@@ -209,8 +150,6 @@
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
-        // Icons initialisieren
-        setTimeout(() => lucide.createIcons(), 100);
     </script>
 </body>
 </html>
